@@ -445,6 +445,35 @@ def generate_html(data):
     </div>
   </section>
 
+
+  <!-- SATISFACTION CLIENT -->
+  <section>
+    <div class="section-label">Satisfaction client</div>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2>Suivi de la satisfaction client</h2>
+          <p>Suivi disponible depuis le canal Teams dédié · Mis à jour en continu par l'équipe</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <p style="font-size:13px; color:var(--text-secondary); line-height:1.6; margin-bottom:16px">
+          Le suivi de la satisfaction client est géré séparément depuis le canal Teams
+          <strong style="color:var(--text-primary)">Suivi de la satisfaction client</strong>.
+          Le fichier de réponses est accessible directement via le lien ci-dessous.
+        </p>
+        <a href="https://sogelink.sharepoint.com/:x:/t/EquipeDeliveryLittralisGeODP-Suividelasatisfactionclient/IQCO8d4z_n7GQLJXQTADrXO3AewqcvG6amiuGealjJiWioI?e=2fZZx9"
+           target="_blank"
+           style="display:inline-flex; align-items:center; gap:8px; padding:10px 18px;
+                  background:var(--blue-light); color:var(--blue);
+                  border:1px solid #BFDBFE; border-radius:8px;
+                  text-decoration:none; font-size:13px; font-weight:500;">
+          📊 Ouvrir Réponses.xlsx sur SharePoint ↗
+        </a>
+      </div>
+    </div>
+  </section>
+
 </main>
 </body>
 </html>"""
@@ -457,7 +486,7 @@ def generate_html(data):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Génère le dashboard HTML depuis l'export Jira.")
     parser.add_argument("--file", help="Chemin vers le fichier jira_export_*.xlsx (optionnel)")
-    parser.add_argument("--output", default="objectifs.html", help="Fichier HTML de sortie (défaut : index.html)")
+    parser.add_argument("--output", default="objectifs.html", help="Fichier HTML de sortie (défaut : objectifs.html)")
     args = parser.parse_args()
 
     filepath = find_export_file(args.file)
@@ -470,7 +499,7 @@ if __name__ == "__main__":
     with open(args.output, "w", encoding="utf-8") as f:
         f.write(html)
 
-    print(f"✅ Dashboard objectifs généré : {args.output}")
+    print(f"✅ Dashboard généré : {args.output}")
     print(f"   CA YTD       : {fmt_eur(data['ytd_ca'])} / {fmt_eur(OBJECTIF_ANNUEL_CA)}")
     print(f"   Rework clos  : {data['total_rework_clos']} / {PALIERS_REWORK[-1][1]} (objectif max)")
     print(f"   Stock rework : {data['stock_actuel']} (était {STOCK_REWORK_DEPART} en janv.)")
