@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suivi Objectifs TEAM — PS France 2026</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F0F2F5; --surface: #FFFFFF; --border: #E2E6EA;
+    --text-primary: #1A1D23; --text-secondary: #6B7280; --text-muted: #9CA3AF;
+    --blue: #2563EB; --blue-light: #EFF6FF; --blue-mid: #BFDBFE;
+    --green: #059669; --green-light: #ECFDF5;
+    --orange: #D97706; --orange-light: #FFFBEB;
+    --red: #DC2626;
+    --litt: #7C3AED; --litt-light: #F5F3FF;
+    --geodp: #0891B2; --geodp-light: #ECFEFF;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  }
+  body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text-primary); min-height: 100vh; }
+  header { background: var(--text-primary); color: white; padding: 28px 40px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  header .title-block h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+  header .title-block p { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 3px; font-family: 'DM Mono', monospace; }
+  header .update-badge { font-family: 'DM Mono', monospace; font-size: 11px; color: rgba(255,255,255,0.45); background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); padding: 6px 12px; border-radius: 6px; white-space: nowrap; }
+  main { max-width: 1100px; margin: 0 auto; padding: 36px 24px 60px; display: flex; flex-direction: column; gap: 28px; }
+  .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
+  .card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; }
+  .card-header { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .card-header h2 { font-size: 15px; font-weight: 600; }
+  .card-header p { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+  .card-body { padding: 24px; }
+  .big-stat { font-family: 'DM Mono', monospace; font-size: 38px; font-weight: 500; letter-spacing: -0.02em; line-height: 1; }
+  .big-stat-label { font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+  .progress-wrap { margin-top: 20px; }
+  .progress-meta { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .progress-pct { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; }
+  .progress-target { font-size: 12px; color: var(--text-secondary); }
+  .progress-track { height: 10px; background: var(--border); border-radius: 99px; position: relative; overflow: visible; }
+  .progress-fill { height: 100%; border-radius: 99px; }
+  .progress-milestone { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 2px; height: 18px; background: var(--text-primary); opacity: 0.2; border-radius: 1px; }
+  .progress-milestone-label { position: absolute; top: 16px; transform: translateX(-50%); font-size: 10px; font-family: 'DM Mono', monospace; color: var(--text-muted); white-space: nowrap; }
+  .ca-split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+  .split-block { padding: 14px 16px; border-radius: 8px; border: 1px solid var(--border); }
+  .split-block .split-label { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 6px; }
+  .split-block .split-amount { font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 500; }
+  .split-block .split-pct { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .split-litt { background: var(--litt-light); border-color: #DDD6FE; }
+  .split-litt .split-label, .split-litt .split-amount { color: var(--litt); }
+  .split-geodp { background: var(--geodp-light); border-color: #A5F3FC; }
+  .split-geodp .split-label, .split-geodp .split-amount { color: var(--geodp); }
+  .monthly-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 4px; }
+  .monthly-table th { text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  .monthly-table th:not(:first-child) { text-align: right; }
+  .monthly-table td { padding: 10px 12px; border-bottom: 1px solid #F3F4F6; font-family: 'DM Mono', monospace; }
+  .monthly-table td:first-child { font-family: 'Inter', sans-serif; font-weight: 500; }
+  .monthly-table td:not(:first-child) { text-align: right; }
+  .monthly-table tr:last-child td { border-bottom: none; }
+  .monthly-table tr.current-month td { background: var(--blue-light); color: var(--blue); }
+  .monthly-table tr.current-month td:first-child { font-weight: 600; }
+  .pct-pill { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 500; }
+  .pct-good { background: var(--green-light); color: var(--green); }
+  .pct-warn { background: var(--orange-light); color: var(--orange); }
+  .pct-bad  { background: #FEF2F2; color: var(--red); }
+  .rework-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+  .rework-step { border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; position: relative; }
+  .rework-step.achieved { background: var(--green-light); border-color: #6EE7B7; }
+  .rework-step.current  { background: var(--orange-light); border-color: #FCD34D; }
+  .rework-step .step-pct { font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 6px; }
+  .rework-step.achieved .step-pct { color: var(--green); }
+  .rework-step.current  .step-pct { color: var(--orange); }
+  .rework-step .step-target { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500; }
+  .rework-step .step-label { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
+  .check-icon { position: absolute; top: 10px; right: 10px; color: var(--green); font-size: 14px; }
+  .rework-current { margin-top: 16px; display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--bg); border-radius: 8px; }
+  .rework-current .big-num { font-family: 'DM Mono', monospace; font-size: 32px; font-weight: 500; line-height: 1; }
+  .rework-current .big-context { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+  .rework-current .big-context strong { color: var(--text-primary); font-weight: 600; }
+  .stock-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .stock-block { flex: 1; min-width: 90px; background: var(--bg); border-radius: 8px; padding: 12px 14px; text-align: center; }
+  .stock-block .stock-num { font-family: 'DM Mono', monospace; font-size: 24px; font-weight: 500; }
+  .stock-block .stock-label { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
+  @media (max-width: 640px) {
+    header { padding: 20px; flex-direction: column; align-items: flex-start; }
+    .big-stat { font-size: 28px; }
+    .ca-split, .rework-steps { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-block">
+    <h1>Suivi Objectifs TEAM — Professional Services France</h1>
+    <p>Année 2026 · Mis à jour le 15/06/2026</p>
+  </div>
+  <div class="update-badge">⟳ Automatique · chaque matin</div>
+</header>
+
+<main>
+
+  <!-- CA ANNUEL -->
+  <section>
+    <div class="section-label">Chiffre d'affaires non récurrent</div>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2>CA cumulé 2026</h2>
+          <p>Objectif annuel : 1 300 000 € · Déclencheur : 1 000 000 €</p>
+        </div>
+        <div style="text-align:right">
+          <div class="big-stat" style="color:var(--blue)">436 996 €</div>
+          <div class="big-stat-label">réalisés sur 1 300 000 €</div>
+        </div>
+      </div>
+      <div class="card-body">
+
+        <div class="progress-wrap">
+          <div class="progress-meta">
+            <span class="progress-pct" style="color:var(--blue)">33.6 %</span>
+            <span class="progress-target">Objectif : 1 300 000 €</span>
+          </div>
+          <div class="progress-track" style="height:14px">
+            <div class="progress-fill" style="width:33.6%; background: linear-gradient(90deg, #2563EB, #60A5FA)"></div>
+            <div class="progress-milestone" style="left:76.9%">
+              <div class="progress-milestone-label">1 000 000 €</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ca-split">
+          <div class="split-block split-litt">
+            <div class="split-label">Littéralis</div>
+            <div class="split-amount">220 673 €</div>
+            <div class="split-pct">50.5 % du CA total</div>
+          </div>
+          <div class="split-block split-geodp">
+            <div class="split-label">GEODP</div>
+            <div class="split-amount">216 323 €</div>
+            <div class="split-pct">49.5 % du CA total</div>
+          </div>
+        </div>
+
+        <div style="margin-top:24px">
+          <div class="section-label" style="margin-bottom:0">Détail mensuel</div>
+        </div>
+        <table class="monthly-table">
+          <thead>
+            <tr>
+              <th>Mois</th><th>CA réalisé</th><th>Objectif</th><th>Atteinte</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Janvier</td>
+              <td>71 233 €</td>
+              <td>140 830 €</td>
+              <td><span class="pct-pill pct-bad">50.6 %</span></td>
+            </tr>
+
+            <tr>
+              <td>Février</td>
+              <td>101 509 €</td>
+              <td>107 440 €</td>
+              <td><span class="pct-pill pct-good">94.5 %</span></td>
+            </tr>
+
+            <tr>
+              <td>Mars</td>
+              <td>96 018 €</td>
+              <td>104 660 €</td>
+              <td><span class="pct-pill pct-good">91.7 %</span></td>
+            </tr>
+
+            <tr>
+              <td>Avril</td>
+              <td>61 719 €</td>
+              <td>104 280 €</td>
+              <td><span class="pct-pill pct-bad">59.2 %</span></td>
+            </tr>
+
+            <tr>
+              <td>Mai</td>
+              <td>71 450 €</td>
+              <td>91 630 €</td>
+              <td><span class="pct-pill pct-warn">78.0 %</span></td>
+            </tr>
+
+            <tr class="current-month">
+              <td>Juin ← en cours</td>
+              <td>35 067 €</td>
+              <td>120 460 €</td>
+              <td><span class="pct-pill pct-bad">29.1 %</span></td>
+            </tr></tbody>
+        </table>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- REWORK -->
+  <section>
+    <div class="section-label">Réduction du backlog Rework</div>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2>Projets Rework clôturés — cumul 2026</h2>
+          <p>Départ : 117 Rework au 1er janvier 2026 · Stock actuel : 55</p>
+        </div>
+      </div>
+      <div class="card-body">
+
+        <div class="rework-current">
+          <div class="big-num">29</div>
+          <div class="big-context">
+            Rework clôturés depuis janvier<br>
+            Objectif 80 % : 50 clôtures · 21 restantes
+          </div>
+        </div>
+
+        <div class="rework-steps">
+          <div class="rework-step ">
+            
+            <div class="step-pct">80 %</div>
+            <div class="step-target">50</div>
+            <div class="step-label">clôtures requises</div>
+          </div>
+
+          <div class="rework-step ">
+            
+            <div class="step-pct">90 %</div>
+            <div class="step-target">60</div>
+            <div class="step-label">clôtures requises</div>
+          </div>
+
+          <div class="rework-step ">
+            
+            <div class="step-pct">100 %</div>
+            <div class="step-target">70</div>
+            <div class="step-label">clôtures requises</div>
+          </div></div>
+
+        <div class="progress-wrap" style="margin-top:20px">
+          <div class="progress-meta">
+            <span class="progress-pct" style="color:var(--green)">29 clôturés</span>
+            <span class="progress-target">Objectif max : 70</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" style="width:41.4%; background: linear-gradient(90deg, #059669, #34D399)"></div>
+            <div class="progress-milestone" style="left:71.4%"><div class="progress-milestone-label">50</div></div>
+<div class="progress-milestone" style="left:85.7%"><div class="progress-milestone-label">60</div></div>
+<div class="progress-milestone" style="left:100.0%"><div class="progress-milestone-label">70</div></div>
+          </div>
+        </div>
+
+        <div style="margin-top:24px">
+          <div class="section-label" style="margin-bottom:8px">Évolution du stock Rework</div>
+          <div class="stock-row">
+            <div class="stock-block">
+              <div class="stock-num">117</div>
+              <div class="stock-label">Stock jan. 2026</div>
+            </div>
+            <div class="stock-block" >
+              <div class="stock-num" style="color:var(--orange)">117</div>
+              <div class="stock-label">Janvier</div>
+            </div>
+
+            <div class="stock-block" style="background:var(--green-light); border: 1px solid #6EE7B7">
+              <div class="stock-num" style="color:var(--green)">55</div>
+              <div class="stock-label">Juin&nbsp;(actuel)</div>
+            </div></div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>
