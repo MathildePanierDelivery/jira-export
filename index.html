@@ -36,6 +36,12 @@
   .blue .card-icon { background: var(--blue-light); color: var(--blue); }
   .green .card-accent { background: var(--green); }
   .green .card-icon { background: var(--green-light); color: var(--green); }
+  --purple: #534AB7; --purple-light: #EEEDFE;
+  --amber: #854F0B; --amber-light: #FAEEDA;
+  .purple .card-accent { background: var(--purple); }
+  .purple .card-icon { background: var(--purple-light); color: var(--purple); }
+  .amber .card-accent { background: var(--amber); }
+  .amber .card-icon { background: var(--amber-light); color: var(--amber); }
   .tool-row { display: flex; align-items: center; gap: 16px; padding: 16px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; text-decoration: none; color: inherit; transition: border-color 0.15s; margin-bottom: 10px; cursor: pointer; }
   .tool-row:hover { border-color: #C8C6C0; }
   .tool-icon { font-size: 18px; width: 36px; height: 36px; background: var(--bg); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -75,6 +81,20 @@
       <div class="card-icon">🎯</div>
       <h2>Suivi des objectifs</h2>
       <p>Avancement CA annuel, déclencheur de prime et réduction du backlog Rework.</p>
+      <span class="card-arrow">↗</span>
+    </a>
+    <a href="backlog.html" class="card purple">
+      <div class="card-accent"></div>
+      <div class="card-icon">📋</div>
+      <h2>Backlog projets</h2>
+      <p>Montants, blocages et mobilisable par solution — Global, Littéralis, GEODP.</p>
+      <span class="card-arrow">↗</span>
+    </a>
+    <a href="charge.html" class="card amber">
+      <div class="card-accent"></div>
+      <div class="card-icon">⏱</div>
+      <h2>Charge équipe</h2>
+      <p>Heures productives, support et interne par solution et par collaborateur.</p>
       <span class="card-arrow">↗</span>
     </a>
   </div>
