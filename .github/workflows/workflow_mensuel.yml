@@ -63,6 +63,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add "*.xlsx" "archives/"
+          git add "*.xlsx"
+          [ -d "archives" ] && git add "archives/" || true
           git diff --cached --quiet || git commit -m "Export mensuel $(date +'%Y-%m')"
           git push

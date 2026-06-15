@@ -136,6 +136,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add "*.xlsx" "*.html" "archives/"
+          git add "*.xlsx" "*.html"
+          [ -d "archives" ] && git add "archives/" || true
           git diff --cached --quiet || git commit -m "Export quotidien $(date +'%Y-%m-%d') [${{ steps.mode.outputs.mode }}]"
           git push
