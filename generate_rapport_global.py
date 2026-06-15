@@ -400,12 +400,37 @@ tr:hover td{background:var(--b1)}
 .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
 .recap-table-wrap{background:#fff;border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
 .recap-table-head{background:var(--b9);color:#fff;padding:10px 18px;font-size:13px;font-weight:600}
+
+<style>
+.ps-topbar{background:#fff;border-bottom:1px solid #E8E6E0;height:48px;display:flex;align-items:center;padding:0 24px;gap:0;position:sticky;top:0;z-index:200;font-family:'Inter',sans-serif}
+.ps-brand{font-size:13px;font-weight:500;margin-right:32px;color:#1A1A18;white-space:nowrap}
+.ps-brand span{color:#6B6B67;font-weight:400}
+.ps-nav{display:flex;align-items:stretch;height:100%;gap:0;flex:1}
+.ps-tab{display:flex;align-items:center;gap:6px;padding:0 14px;font-size:13px;color:#6B6B67;border-bottom:2px solid transparent;text-decoration:none;white-space:nowrap}
+.ps-tab:hover{color:#1A1A18}
+.ps-tab.active{color:#1A1A18;border-bottom-color:#185FA5;font-weight:500}
+.ps-right{display:flex;align-items:center;gap:8px;margin-left:auto}
+.ps-date{font-size:11px;color:#9B9B96;background:#F8F8F6;border:1px solid #E8E6E0;padding:3px 10px;border-radius:99px;font-family:monospace}
+</style>
 @media print{body{background:#fff}.cd,.accordion{break-inside:avoid;box-shadow:none;border:1px solid var(--g2)}.accordion-body{display:block !important}.hdr{print-color-adjust:exact;-webkit-print-color-adjust:exact}.tab-panel{display:block !important}}
 .anc-btn{padding:6px 14px;border-radius:4px;border:1px solid var(--g2);background:transparent;color:var(--g6);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
 .anc-btn:hover{border-color:var(--ac,var(--b6));color:var(--ac,var(--b6))}
 .anc-btn.active{background:var(--ac,var(--b6));color:#fff;border-color:var(--ac,var(--b6))}
 @media(max-width:900px){.g2,.g3,.chart-grid,.gauge-meta,.bl-kpis{grid-template-columns:1fr}.kr{grid-template-columns:repeat(2,1fr)}.tabs-nav{flex-wrap:wrap}}
 </style></head><body>
+<nav class="ps-topbar">
+  <div class="ps-brand">PS France <span>/ Tableau de bord</span></div>
+  <div class="ps-nav">
+    <a class="ps-tab" href="index.html">Accueil</a>
+    <a class="ps-tab" href="objectifs.html">Objectifs</a>
+    <a class="ps-tab active" href="rapport_global.html">Rapport global</a>
+    <a class="ps-tab" href="backlog.html">Backlog</a>
+    <a class="ps-tab" href="charge.html">Charge</a>
+  </div>
+  <div class="ps-right">
+    <span class="ps-date">Mis à jour le {today_str}</span>
+  </div>
+</nav>
 
 <div class="hdr">
 <div><h1>Rapport Global — COORDIN</h1><div class="sub">Tableau de bord mensuel interactif</div></div>
@@ -695,15 +720,15 @@ allMois.map(function(r){return'<tr><td><b>'+r.mois+'</b></td><td class="r">'+fmt
 var sm=document.getElementById("sm"),sa=document.getElementById("sa"),an=[];
 P.forEach(function(p){if(an.indexOf(p.annee)===-1)an.push(p.annee)});an.sort();
 ML.forEach(function(m){var o=document.createElement("option");o.value=m;o.textContent=m;if(m===CUR.mois)o.selected=true;sm.appendChild(o)});
-an.forEach(function(a){var o=document.createElement("option");o.value=a;o.textContent=a;if(a===CUR.annee)o.selected=true;sa.appendChild(o)});
+an.forEach(function(a){var o=document.createElement("option");o.value=a;o.textContent=a;if(a==CUR.annee)o.selected=true;sa.appendChild(o)});
 sm.addEventListener("change",render);sa.addEventListener("change",render);
 var ea=document.getElementById("ea");
-an.forEach(function(a){var o=document.createElement("option");o.value=a;o.textContent=a;if(a===CUR.annee)o.selected=true;ea.appendChild(o)});
+an.forEach(function(a){var o=document.createElement("option");o.value=a;o.textContent=a;if(a==CUR.annee)o.selected=true;ea.appendChild(o)});
 ea.addEventListener("change",renderEvolution);
 // Ancienneté selectors
 var ancSm=document.getElementById("anc-sm"),ancSa=document.getElementById("anc-sa");
 ML.forEach(function(m){var o=document.createElement("option");o.value=m;o.textContent=m;if(m===CUR.mois)o.selected=true;ancSm.appendChild(o)});
-an.forEach(function(a){var o=document.createElement("option");o.value=a;o.textContent=a;if(a===CUR.annee)o.selected=true;ancSa.appendChild(o)});
+an.forEach(function(a){var o=document.createElement("option");o.value=a;o.textContent=a;if(a==CUR.annee)o.selected=true;ancSa.appendChild(o)});
 ancSm.addEventListener("change",renderAnciennete);ancSa.addEventListener("change",renderAnciennete);
 render();
 })();
