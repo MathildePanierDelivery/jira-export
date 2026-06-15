@@ -70,6 +70,12 @@ jobs:
       - name: Générer dashboard suivi objectifs
         run: python generate_suivi_objectifs.py
 
+      - name: Générer dashboard backlog
+        run: python generate_backlog.py
+
+      - name: Générer dashboard charge
+        run: python generate_charge.py
+
       - name: Export backlog
         env:
           JIRA_URL: ${{ secrets.JIRA_URL }}
@@ -136,8 +142,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
           git add "*.xlsx" "*.html"
           [ -d "archives" ] && git add "archives/" || true
           git diff --cached --quiet || git commit -m "Export quotidien $(date +'%Y-%m-%d') [${{ steps.mode.outputs.mode }}]"
-          git pull --rebase origin main
           git push
