@@ -109,7 +109,7 @@ def charge_panel(d, label, color):
       <div class="kpi">
         <div class="kpi-label">Productif</div>
         <div class="kpi-value" style="color:{color}">{ds.fmt_h(d['productif'])}</div>
-        <div class="kpi-trend flat">{(d['productif']/total*100):.1f}% du total</div>
+        <div class="kpi-trend flat">{(d['productif']/total*100 if total else 0):.1f}% du total</div>
       </div>
       <div class="kpi">
         <div class="kpi-label">Rework</div>
