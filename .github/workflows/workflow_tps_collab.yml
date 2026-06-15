@@ -69,4 +69,5 @@ jobs:
           git add "*.xlsx"
           [ -d "archives" ] && git add "archives/" || true
           git diff --cached --quiet || git commit -m "Temps collaborateurs $(date +'%Y-%m') [${{ inputs.mode }}]"
+          git pull --rebase origin main
           git push

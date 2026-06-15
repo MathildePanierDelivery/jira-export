@@ -139,4 +139,5 @@ jobs:
           git add "*.xlsx" "*.html"
           [ -d "archives" ] && git add "archives/" || true
           git diff --cached --quiet || git commit -m "Export quotidien $(date +'%Y-%m-%d') [${{ steps.mode.outputs.mode }}]"
+          git pull --rebase origin main
           git push

@@ -66,4 +66,5 @@ jobs:
           git add "*.xlsx"
           [ -d "archives" ] && git add "archives/" || true
           git diff --cached --quiet || git commit -m "Export mensuel $(date +'%Y-%m')"
+          git pull --rebase origin main
           git push
