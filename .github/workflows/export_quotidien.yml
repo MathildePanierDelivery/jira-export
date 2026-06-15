@@ -1,0 +1,147 @@
+name: Export quotidien
+
+on:
+  schedule:
+    - cron: '0 7 * * 1-5'  # Lundi-vendredi à 7h UTC
+  workflow_dispatch:
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout du dépôt
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Installer les dépendances
+        run: pip install -r requirements.txt
+
+      - name: Détecter le mode d'export
+        id: mode
+        run: |
+          python3 - << 'PYEOF'
+          import os, calendar
+          from datetime import date, timedelta
+
+          today = date.today()
+          y, m = today.year, today.month
+
+          # Premier jour ouvré du mois
+          d = date(y, m, 1)
+          while d.weekday() > 4:
+              d += timedelta(days=1)
+          first_workday = d
+
+          # Premier vendredi du mois
+          first_day = date(y, m, 1)
+          days_until_friday = (4 - first_day.weekday()) % 7
+          first_friday = first_day + timedelta(days=days_until_friday)
+
+          mode = "mois_precedent" if today == first_workday else "mois_courant"
+          is_final = "true" if today == first_workday else "false"
+          is_prev  = "true" if today == first_friday else "false"
+
+          print(f"Mode : {mode}")
+          print(f"Premier vendredi : {first_friday} → prévisionnel={is_prev}")
+          print(f"1er jour ouvré   : {first_workday} → final={is_final}")
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"mode={mode}\n")
+              f.write(f"is_final={is_final}\n")
+              f.write(f"is_previsionnel={is_prev}\n")
+          PYEOF
+
+      # ── Export production ──────────────────────────────────────
+      - name: Export Jira global (production)
+        env:
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          EXPORT_MODE: ${{ steps.mode.outputs.mode }}
+        run: python Export_Jira_global_v2.py
+
+      - name: Générer le dashboard global
+        run: python Rapport_global.py
+
+      - name: Générer le dashboard objectifs
+        run: python generate_dashboard.py
+
+      # ── Export backlog ─────────────────────────────────────────
+      - name: Export backlog par CA
+        env:
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: python Export_Backlog_By_CA.py
+
+      # ── Export commandes ───────────────────────────────────────
+      - name: Export commandes
+        env:
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: python Export_commandes_jira.py
+
+      # ── Archivage prévisionnel (premier vendredi du mois) ──────
+      - name: Archivage prévisionnel
+        if: steps.mode.outputs.is_previsionnel == 'true'
+        run: |
+          python3 - << 'PYEOF'
+          import glob, shutil, os
+          from datetime import date
+          today = date.today()
+          prefix = f"{today.year}-{today.month:02d}"
+          mois_fr = ["Janvier","Février","Mars","Avril","Mai","Juin",
+                     "Juillet","Août","Septembre","Octobre","Novembre","Décembre"]
+          nom_mois = mois_fr[today.month - 1]
+          os.makedirs("archives", exist_ok=True)
+          for pattern, label in [
+              ("jira_export_*.xlsx",          f"{prefix}_previsionnel_{nom_mois}.xlsx"),
+              ("Backlog_projets_by_CA_*.xlsx", f"{prefix}_backlog_previsionnel_{nom_mois}.xlsx"),
+          ]:
+              files = sorted(glob.glob(pattern), reverse=True)
+              if files:
+                  dest = f"archives/{label}"
+                  shutil.copy2(files[0], dest)
+                  print(f"✅ {dest}")
+          PYEOF
+
+      # ── Archivage final (1er jour ouvré = export mois précédent) ─
+      - name: Archivage final
+        if: steps.mode.outputs.is_final == 'true'
+        run: |
+          python3 - << 'PYEOF'
+          import glob, shutil, os
+          from datetime import date
+          today = date.today()
+          m = today.month - 1 if today.month > 1 else 12
+          y = today.year if today.month > 1 else today.year - 1
+          prefix = f"{y}-{m:02d}"
+          mois_fr = ["Janvier","Février","Mars","Avril","Mai","Juin",
+                     "Juillet","Août","Septembre","Octobre","Novembre","Décembre"]
+          nom_mois = mois_fr[m - 1]
+          os.makedirs("archives", exist_ok=True)
+          for pattern, label in [
+              ("jira_export_*.xlsx",          f"{prefix}_final_{nom_mois}.xlsx"),
+              ("Backlog_projets_by_CA_*.xlsx", f"{prefix}_backlog_final_{nom_mois}.xlsx"),
+          ]:
+              files = sorted(glob.glob(pattern), reverse=True)
+              if files:
+                  dest = f"archives/{label}"
+                  shutil.copy2(files[0], dest)
+                  print(f"✅ {dest}")
+          PYEOF
+
+      # ── Commit ────────────────────────────────────────────────
+      - name: Committer et pousser
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "*.xlsx" "*.html" "archives/"
+          git diff --cached --quiet || git commit -m "Export quotidien du $(date +'%Y-%m-%d') [${{ steps.mode.outputs.mode }}]"
+          git push
