@@ -1,0 +1,102 @@
+# ══════════════════════════════════════════════════════════════════
+# Pipeline mensuel — Export Jira/Tempo → Excel → Historique → Dashboard HTML
+# ══════════════════════════════════════════════════════════════════
+# Données sensibles (absences, cache worklogs) : JAMAIS commitées.
+#   - absences_2026.xlsx : reconstitué depuis un Secret au début du run
+#   - jira_cache.pkl     : généré pendant le run, supprimé à la fin
+# Seuls les livrables PUBLICS sont publiés (dashboards HTML, historique agrégé).
+# ══════════════════════════════════════════════════════════════════
+
+name: Pipeline mensuel
+
+on:
+  workflow_dispatch:            # lancement manuel (bouton "Run workflow")
+    inputs:
+      mois:
+        description: 'Mois cible'
+        required: false
+        default: 'courant'
+        type: choice
+        options:
+          - courant
+          - precedent
+  schedule:
+    - cron: '0 6 * * *'         # tous les jours 06:00 UTC (08h Paris été)
+
+permissions:
+  contents: write               # autorise le workflow à committer les HTML
+
+jobs:
+  generer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Installer les dépendances
+        run: pip install jira requests pandas openpyxl holidays
+
+      # ── Reconstituer le fichier absences depuis le Secret (jamais commité) ──
+      - name: Restaurer absences_2026.xlsx
+        env:
+          ABSENCES_B64: ${{ secrets.ABSENCES_B64 }}
+        run: |
+          if [ -n "$ABSENCES_B64" ]; then
+            echo "$ABSENCES_B64" | base64 -d > absences_2026.xlsx
+            echo "✅ absences_2026.xlsx restauré depuis le Secret"
+          else
+            echo "⚠️ Secret ABSENCES_B64 absent — absences à 0"
+          fi
+
+      # ── Étape 1 : collecte Jira + Tempo (génère jira_cache.pkl, NON commité) ──
+      - name: Collecter les données
+        env:
+          JIRA_URL:       ${{ secrets.JIRA_URL }}
+          JIRA_EMAIL:     ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          TEMPO_TOKEN:    ${{ secrets.TEMPO_TOKEN }}
+        run: python collect_jira_worklogs.py --mois "${{ github.event.inputs.mois || 'courant' }}" --refresh
+
+      # ── Étape 2 : générer l'export Excel (8 onglets) ──
+      - name: Générer l'export Excel
+        env:
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+        run: python export_v4_palier.py
+
+      # ── Étape 3 : générer le dashboard HTML ──
+      - name: Générer le dashboard
+        run: python generate_dashboard_mensuel.py
+
+      # ── Nettoyer les fichiers sensibles AVANT tout commit ──
+      - name: Supprimer les fichiers sensibles
+        if: always()
+        run: |
+          rm -f jira_cache.pkl absences_2026.xlsx
+          echo "🧹 Fichiers sensibles supprimés"
+
+      # ── Publier UNIQUEMENT les livrables non sensibles ──
+      - name: Publier les dashboards
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dashboard_mensuel.html index.html _historique.xlsx 2>/dev/null || true
+          git add jira_export_*.xlsx 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "Aucun changement à publier"
+          else
+            git commit -m "MAJ dashboard $(date +'%Y-%m-%d')"
+            git pull --rebase --autostash origin ${{ github.ref_name }} || true
+            git push
+          fi
+
+      - name: Résumé
+        if: always()
+        run: echo "Pipeline terminé — voir les logs ci-dessus"
