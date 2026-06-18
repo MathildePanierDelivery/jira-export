@@ -65,6 +65,9 @@ jobs:
           TEMPO_TOKEN:    ${{ secrets.TEMPO_TOKEN }}
         run: python collect_jira_worklogs.py --mois "${{ github.event.inputs.mois || 'courant' }}" --refresh
 
+      - name: Debug
+        run: find . -name "*.py"
+
       # ── Étape 2 : générer l'export Excel (8 onglets) ──
       - name: Générer l'export Excel
         env:
