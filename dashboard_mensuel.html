@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pilotage mensuel — PS France</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root {
+    --ink:        #15233B;   /* bleu ardoise profond */
+    --ink-soft:   #3A4D6B;
+    --paper:      #F6F7F9;
+    --card:       #FFFFFF;
+    --line:       #E3E7ED;
+    --litt:       #2E6FB7;   /* bleu Littéralis */
+    --geodp:      #C8770F;   /* ambre GEODP */
+    --good:       #2F7D52;
+    --good-bg:    #E7F2EC;
+    --bad:        #B43A2E;
+    --bad-bg:     #F7E7E4;
+    --warn:       #B8860B;
+    --muted:      #6B7890;
+    --prod:       #2E6FB7;
+    --interne:    #8A93A6;
+    --support:    #C8770F;
+    --radius:     10px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Bandeau ── */
+  header {
+    background: var(--ink);
+    color: #fff;
+    padding: 20px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .brand { display: flex; flex-direction: column; }
+  .brand .eyebrow {
+    font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
+    color: #8FA6C9; font-weight: 600;
+  }
+  .brand h1 {
+    font-family: 'Fraunces', serif; font-weight: 600;
+    font-size: 26px; letter-spacing: -.01em; margin-top: 2px;
+  }
+  .selectors { display: flex; gap: 10px; align-items: center; }
+  .selectors select {
+    appearance: none;
+    background: rgba(255,255,255,.08);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.22);
+    border-radius: 8px;
+    padding: 9px 34px 9px 14px;
+    font-family: inherit; font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='white' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+  .selectors select:focus { outline: 2px solid #8FA6C9; outline-offset: 1px; }
+  .selectors select option {
+    background: #fff;
+    color: var(--ink);
+    font-weight: 500;
+  }
+  /* lien retour accueil */
+  .home-link {
+    display: inline-flex; align-items: center; gap: 7px;
+    color: #8FA6C9; text-decoration: none; font-size: 13px; font-weight: 600;
+    padding: 8px 12px; border-radius: 8px;
+    border: 1px solid rgba(255,255,255,.18);
+    transition: background .15s, color .15s;
+  }
+  .home-link:hover { background: rgba(255,255,255,.08); color: #fff; }
+
+  main { max-width: 1180px; margin: 0 auto; padding: 28px 24px 60px; }
+
+  /* ── Sections ── */
+  .section { margin-bottom: 34px; }
+  .section-head {
+    display: flex; align-items: baseline; gap: 12px;
+    margin-bottom: 14px; padding-bottom: 8px;
+    border-bottom: 2px solid var(--ink);
+  }
+  .section-head h2 {
+    font-family: 'Fraunces', serif; font-weight: 600; font-size: 20px;
+  }
+  .section-head .note { font-size: 12.5px; color: var(--muted); }
+
+  /* ── Grilles de cartes ── */
+  .grid { display: grid; gap: 16px; }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 820px) { .grid-3, .grid-2 { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+  .card .label {
+    font-size: 12px; color: var(--muted); font-weight: 600;
+    text-transform: uppercase; letter-spacing: .04em;
+  }
+  .card .value {
+    font-size: 28px; font-weight: 700; margin-top: 4px;
+    font-variant-numeric: tabular-nums; letter-spacing: -.02em;
+  }
+  .card .value.small { font-size: 22px; }
+  .card .sub { font-size: 13px; color: var(--ink-soft); margin-top: 6px; }
+
+  .tag-litt { color: var(--litt); }
+  .tag-geodp { color: var(--geodp); }
+
+  /* Barre de progression objectif */
+  .bar { height: 8px; border-radius: 5px; background: var(--line); margin-top: 10px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; border-radius: 5px; }
+  .pct { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .pct.good { color: var(--good); }
+  .pct.bad  { color: var(--bad); }
+
+  /* Comparaison CA vs commandes */
+  .vs-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; font-size: 13px; }
+  .vs-bar { flex: 1; height: 22px; background: var(--paper); border-radius: 5px; position: relative; overflow: hidden; }
+  .vs-bar > i { position: absolute; top: 0; left: 0; height: 100%; border-radius: 5px; }
+
+  /* Donuts */
+  .donut-wrap { display: flex; align-items: center; gap: 16px; }
+  .donut-legend { font-size: 12.5px; }
+  .donut-legend div { display: flex; align-items: center; gap: 7px; margin: 3px 0; }
+  .donut-legend .sw { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+  .donut-legend .lv { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 600; padding-left: 12px; }
+
+  .card-title { font-weight: 700; font-size: 14px; margin-bottom: 12px; }
+  .card-title.litt { color: var(--litt); }
+  .card-title.geodp { color: var(--geodp); }
+
+  .empty { color: var(--muted); font-style: italic; font-size: 13px; }
+
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px; }
+
+  @media print {
+    .selectors { display: none; }
+    body { background: #fff; }
+    .card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <a href="index.html" class="home-link" style="align-self:flex-start;margin-bottom:8px">← Accueil</a>
+    <span class="eyebrow">PS France · Pilotage de production</span>
+    <h1>Tableau de bord mensuel</h1>
+  </div>
+  <div class="selectors">
+    <select id="sel-mois"></select>
+    <select id="sel-annee"></select>
+  </div>
+</header>
+
+<main id="app"><!-- rempli par JS --></main>
+
+<footer>Données issues du suivi de production · généré automatiquement</footer>
+
+<script>
+const DATA = {"2026": {"Janvier": {"ca": {"global": 71232.501, "litt": 29671.556, "geodp": 41560.945, "obj_global": 140830.0, "obj_litt": 0.0, "obj_geodp": 0.0, "py_global": 0.0, "py_litt": 0.0, "py_geodp": 0.0}, "charge": {"prod_litt": 196.0, "prod_geodp": 155.0, "sup_litt": 69.75, "sup_geodp": 0.0, "rew_litt": 45.0, "rew_geodp": 37.0, "interne": 172.25, "prod_total": 662.58, "sup_total": 76.75, "rew_total": 151.08}, "commandes": {"global": 152204.0, "litt": 27252.0, "geodp": 48850.0, "nb": 26}, "backlog": {"total": 443000.0, "bloque": 109000.0, "mobilisable": 334000.0, "nb_projets": 151, "nb_rework": 117}}, "Février": {"ca": {"global": 101509.39, "litt": 69032.08, "geodp": 32477.31, "obj_global": 107440.0, "obj_litt": 64620.0, "obj_geodp": 42820.0, "py_global": 0.0, "py_litt": 0.0, "py_geodp": 0.0}, "charge": {"prod_litt": 417.08, "prod_geodp": 166.5, "sup_litt": 80.4, "sup_geodp": 2.0, "rew_litt": 100.17, "rew_geodp": 25.75, "interne": 190.25, "prod_total": 583.58, "sup_total": 91.9, "rew_total": 125.92}, "commandes": {"global": 56033.0, "litt": 9090.5, "geodp": 46942.5, "nb": 36}, "backlog": {"total": 382854.846, "bloque": 116592.773, "mobilisable": 266262.073, "nb_projets": 174, "nb_rework": 105}}, "Mars": {"ca": {"global": 96018.39, "litt": 44313.64, "geodp": 51704.75, "obj_global": 104660.0, "obj_litt": 70950.0, "obj_geodp": 33710.0, "py_global": 0.0, "py_litt": 0.0, "py_geodp": 0.0}, "charge": {"prod_litt": 483.42, "prod_geodp": 207.0, "sup_litt": 96.0, "sup_geodp": 13.5, "rew_litt": 137.5, "rew_geodp": 16.25, "interne": 208.42, "prod_total": 690.42, "sup_total": 129.5, "rew_total": 153.75}, "commandes": {"global": 99299.05, "litt": 24322.45, "geodp": 74976.6, "nb": 39}, "backlog": {"total": 391204.508, "bloque": 126224.655, "mobilisable": 264979.853, "nb_projets": 187, "nb_rework": 84}}, "Avril": {"ca": {"global": 61719.0, "litt": 26399.0, "geodp": 35320.0, "obj_global": 104280.0, "obj_litt": 68750.0, "obj_geodp": 35530.0, "py_global": 0.0, "py_litt": 0.0, "py_geodp": 0.0}, "charge": {"prod_litt": 388.42, "prod_geodp": 179.5, "sup_litt": 76.75, "sup_geodp": 8.0, "rew_litt": 69.75, "rew_geodp": 19.0, "interne": 223.25, "prod_total": 567.92, "sup_total": 84.75, "rew_total": 88.75}, "commandes": {"global": 50973.0, "litt": 17338.0, "geodp": 33635.0, "nb": 29}, "backlog": {"total": 376234.886, "bloque": 157947.556, "mobilisable": 218287.33, "nb_projets": 186, "nb_rework": 67}}, "Mai": {"ca": {"global": 71773.36, "litt": 41388.74, "geodp": 30384.62, "obj_global": 91630.0, "obj_litt": 52460.0, "obj_geodp": 39170.0, "py_global": 0.0, "py_litt": 0.0, "py_geodp": 0.0}, "charge": {"prod_litt": 248.5, "prod_geodp": 98.5, "sup_litt": 49.0, "sup_geodp": 0.5, "rew_litt": 21.75, "rew_geodp": 12.25, "interne": 145.33, "prod_total": 347.5, "sup_total": 49.5, "rew_total": 34.0}, "commandes": {"global": 59433.5, "litt": 14503.5, "geodp": 44930.0, "nb": 23}, "backlog": {"total": 360955.231, "bloque": 176136.006, "mobilisable": 184819.225, "nb_projets": 185, "nb_rework": 58}}, "Juin": {"ca": {"global": 35469.48, "litt": 10270.85, "geodp": 25198.63, "obj_global": 120460.0, "obj_litt": 0.0, "obj_geodp": 0.0, "py_global": 0.0, "py_litt": 0.0, "py_geodp": 0.0}, "charge": {"prod_litt": 154.0, "prod_geodp": 71.0, "sup_litt": 37.0, "sup_geodp": 5.5, "rew_litt": 0.0, "rew_geodp": 0.0, "interne": 77.25, "prod_total": 226.75, "sup_total": 42.5, "rew_total": 0.0}, "commandes": {"global": 37620.5, "litt": 18565.5, "geodp": 19055.0, "nb": 21}}}};
+const MOIS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+const DEF_ANNEE = "2026";
+const DEF_MOIS = "Juin";
+
+const eur = n => (n||0).toLocaleString('fr-FR', {maximumFractionDigits:0}) + ' €';
+const h = n => (n||0).toLocaleString('fr-FR', {maximumFractionDigits:0}) + ' h';
+const pct = (a,b) => b > 0 ? Math.round(a/b*1000)/10 : 0;
+
+/* ── Donut SVG ── */
+function donut(segments, size=104) {
+  const total = segments.reduce((s,x)=>s+x.v, 0);
+  const r = size/2 - 9, cx = size/2, cy = size/2, C = 2*Math.PI*r;
+  let off = 0;
+  let arcs = '';
+  if (total > 0) {
+    for (const seg of segments) {
+      const frac = seg.v/total;
+      const len = frac*C;
+      arcs += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none"
+        stroke="${seg.c}" stroke-width="14"
+        stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}"
+        transform="rotate(-90 ${cx} ${cy})"/>`;
+      off += len;
+    }
+  } else {
+    arcs = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#E3E7ED" stroke-width="14"/>`;
+  }
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    ${arcs}
+    <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central"
+      font-size="15" font-weight="700" fill="#15233B">${Math.round(total)}h</text>
+  </svg>`;
+}
+
+function legend(segments) {
+  return `<div class="donut-legend">` + segments.map(s =>
+    `<div><span class="sw" style="background:${s.c}"></span>${s.label}
+     <span class="lv">${Math.round(s.v)}h</span></div>`).join('') + `</div>`;
+}
+
+function donutCard(title, cls, segments) {
+  return `<div class="card">
+    <div class="card-title ${cls}">${title}</div>
+    <div class="donut-wrap">${donut(segments)}${legend(segments)}</div>
+  </div>`;
+}
+
+/* ── CA : carte avec objectif ── */
+function caCard(label, cls, real, obj) {
+  const p = pct(real, obj);
+  const col = p >= 100 ? 'var(--good)' : (cls==='litt'?'var(--litt)':(cls==='geodp'?'var(--geodp)':'var(--ink)'));
+  return `<div class="card">
+    <div class="label">${label}</div>
+    <div class="value ${cls?('tag-'+cls):''}">${eur(real)}</div>
+    <div class="sub">Objectif ${eur(obj)} · <span class="pct ${p>=100?'good':'bad'}">${p}%</span></div>
+    <div class="bar"><i style="width:${Math.min(p,100)}%;background:${col}"></i></div>
+  </div>`;
+}
+
+/* ── CA vs commandes ── */
+function vsCard(label, ca, cmd) {
+  const max = Math.max(ca, cmd, 1);
+  return `<div class="card">
+    <div class="label">${label}</div>
+    <div class="vs-row"><span style="width:88px">CA réalisé</span>
+      <div class="vs-bar"><i style="width:${ca/max*100}%;background:var(--litt)"></i></div>
+      <span style="width:78px;text-align:right;font-weight:600">${eur(ca)}</span></div>
+    <div class="vs-row"><span style="width:88px">Commandes</span>
+      <div class="vs-bar"><i style="width:${cmd/max*100}%;background:var(--geodp)"></i></div>
+      <span style="width:78px;text-align:right;font-weight:600">${eur(cmd)}</span></div>
+  </div>`;
+}
+
+function render() {
+  const annee = document.getElementById('sel-annee').value;
+  const mois  = document.getElementById('sel-mois').value;
+  const d = (DATA[annee] && DATA[annee][mois]) ? DATA[annee][mois] : {};
+  const app = document.getElementById('app');
+
+  const ca = d.ca || {};
+  const ch = d.charge || {};
+  const cm = d.commandes || {};
+  const bl = d.backlog || {};
+
+  let html = '';
+
+  /* ═══ CA ═══ */
+  html += `<div class="section"><div class="section-head">
+    <h2>Chiffre d'affaires</h2><span class="note">${mois} ${annee}</span></div>
+    <div class="grid grid-3">
+      ${caCard("CA global", "", ca.global, ca.obj_global)}
+      ${caCard("CA Littéralis", "litt", ca.litt, ca.obj_litt)}
+      ${caCard("CA GEODP", "geodp", ca.geodp, ca.obj_geodp)}
+    </div></div>`;
+
+  /* ═══ CA vs commandes ═══ */
+  html += `<div class="section"><div class="section-head">
+    <h2>CA réalisé vs commandes reçues</h2></div>
+    <div class="grid grid-3">
+      ${vsCard("Global", ca.global, cm.global)}
+      ${vsCard("Littéralis", ca.litt, cm.litt)}
+      ${vsCard("GEODP", ca.geodp, cm.geodp)}
+    </div></div>`;
+
+  /* ═══ Charge : répartition ═══ */
+  const prodG = (ch.prod_litt||0)+(ch.prod_geodp||0);
+  const supG  = (ch.sup_litt||0)+(ch.sup_geodp||0);
+  const intG  = ch.interne||0;
+  const segG = [
+    {label:'Productif', v:prodG, c:'var(--prod)'},
+    {label:'Support',   v:supG,  c:'var(--support)'},
+    {label:'Interne',   v:intG,  c:'var(--interne)'},
+  ];
+  const segL = [
+    {label:'Productif', v:ch.prod_litt, c:'var(--prod)'},
+    {label:'Support',   v:ch.sup_litt,  c:'var(--support)'},
+  ];
+  const segGe = [
+    {label:'Productif', v:ch.prod_geodp, c:'var(--prod)'},
+    {label:'Support',   v:ch.sup_geodp,  c:'var(--support)'},
+  ];
+  html += `<div class="section"><div class="section-head">
+    <h2>Répartition des heures</h2>
+    <span class="note">productif / support / interne</span></div>
+    <div class="grid grid-3">
+      ${donutCard("Global", "", segG)}
+      ${donutCard("Littéralis", "litt", segL)}
+      ${donutCard("GEODP", "geodp", segGe)}
+    </div></div>`;
+
+  /* ═══ Détail productif (projet/rework) ═══ */
+  /* L'historique actuel ne distingue que Rework dans le productif.
+     Projet = productif - rework. Le détail "gratuit" viendra avec l'enrichissement. */
+  const projL = Math.max(0,(ch.prod_litt||0)-(ch.rew_litt||0));
+  const projGe= Math.max(0,(ch.prod_geodp||0)-(ch.rew_geodp||0));
+  const dG = [
+    {label:'Projet', v:projL+projGe, c:'var(--litt)'},
+    {label:'Rework', v:(ch.rew_litt||0)+(ch.rew_geodp||0), c:'var(--bad)'},
+  ];
+  const dL = [
+    {label:'Projet', v:projL, c:'var(--litt)'},
+    {label:'Rework', v:ch.rew_litt, c:'var(--bad)'},
+  ];
+  const dGe = [
+    {label:'Projet', v:projGe, c:'var(--litt)'},
+    {label:'Rework', v:ch.rew_geodp, c:'var(--bad)'},
+  ];
+  html += `<div class="section"><div class="section-head">
+    <h2>Détail du temps productif</h2>
+    <span class="note">projet vs rework · le détail « gratuit » arrive avec l'enrichissement</span></div>
+    <div class="grid grid-3">
+      ${donutCard("Global", "", dG)}
+      ${donutCard("Littéralis", "litt", dL)}
+      ${donutCard("GEODP", "geodp", dGe)}
+    </div></div>`;
+
+  /* ═══ Clôtures ═══ */
+  html += `<div class="section"><div class="section-head">
+    <h2>Clôtures</h2></div>
+    <div class="grid grid-3">
+      <div class="card"><div class="label">Projets clôturés (stock fin de mois)</div>
+        <div class="value">${bl.nb_projets ?? '—'}</div>
+        <div class="sub">épics projet ouvertes à date</div></div>
+      <div class="card"><div class="label">Rework en stock</div>
+        <div class="value">${bl.nb_rework ?? '—'}</div>
+        <div class="sub">épics rework ouvertes à date</div></div>
+      <div class="card"><div class="label">Commandes reçues</div>
+        <div class="value">${cm.nb ?? '—'}</div>
+        <div class="sub">épics créées ce mois</div></div>
+    </div>
+    <p class="empty" style="margin-top:10px">Le nombre de projets <em>clôturés dans le mois</em> (flux) sera ajouté avec l'enrichissement de l'historique ; les chiffres ci-dessus reflètent le stock à date.</p>
+    </div>`;
+
+  app.innerHTML = html;
+}
+
+/* ── Init sélecteurs ── */
+function initSelectors() {
+  const selA = document.getElementById('sel-annee');
+  const selM = document.getElementById('sel-mois');
+  const annees = Object.keys(DATA).sort();
+  selA.innerHTML = annees.map(a=>`<option ${a===DEF_ANNEE?'selected':''}>${a}</option>`).join('');
+
+  function refreshMois() {
+    const a = selA.value;
+    const dispo = MOIS.filter(m => DATA[a] && DATA[a][m]);
+    selM.innerHTML = dispo.map(m=>`<option ${m===DEF_MOIS?'selected':''}>${m}</option>`).join('');
+    if (![...selM.options].some(o=>o.selected) && selM.options.length)
+      selM.options[selM.options.length-1].selected = true;
+  }
+  refreshMois();
+  selA.addEventListener('change', ()=>{ refreshMois(); render(); });
+  selM.addEventListener('change', render);
+}
+
+initSelectors();
+render();
+</script>
+</body>
+</html>
