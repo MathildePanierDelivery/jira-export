@@ -35,6 +35,13 @@ jobs:
       - name: Récupérer le dépôt
         uses: actions/checkout@v4
 
+      - name: Debug dépôt
+        run: |
+          pwd
+          ls -la
+          git rev-parse HEAD
+          git ls-files | grep export
+
       - name: Installer Python
         uses: actions/setup-python@v5
         with:
@@ -64,9 +71,6 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           TEMPO_TOKEN:    ${{ secrets.TEMPO_TOKEN }}
         run: python collect_jira_worklogs.py --mois "${{ github.event.inputs.mois || 'courant' }}" --refresh
-
-      - name: Debug
-        run: find . -name "*.py"
 
       # ── Étape 2 : générer l'export Excel (8 onglets) ──
       - name: Générer l'export Excel
