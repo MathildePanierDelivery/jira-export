@@ -5,26 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pilotage mensuel — PS France</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 
   :root {
-    --ink:        #15233B;   /* bleu ardoise profond */
-    --ink-soft:   #3A4D6B;
-    --paper:      #F6F7F9;
+    /* palette alignée sur l'index */
+    --bg:         #F8F8F6;   /* fond beige clair */
+    --surface:    #FFFFFF;
+    --border:     #E8E6E0;
+    --ink:        #1A1A18;   /* texte principal */
+    --ink-soft:   #3A3A36;
+    --muted:      #6B6B67;
+    --muted-2:    #9B9B96;
+    --litt:       #185FA5;   /* bleu Littéralis (= --blue de l'index) */
+    --litt-light: #E6F1FB;
+    --geodp:      #854F0B;   /* ambre GEODP (= --amber de l'index) */
+    --geodp-light:#FAEEDA;
+    --good:       #3B6D11;   /* vert (= --green de l'index) */
+    --good-bg:    #EAF3DE;
+    --bad:        #993C1D;
+    --bad-bg:     #FAECE7;
+    --teal:       #0F6E56;
+    --teal-light: #E1F5EE;
+    /* rôles graphiques */
+    --prod:       #185FA5;   /* productif = bleu */
+    --support:    #854F0B;   /* support = ambre */
+    --interne:    #9B9B96;   /* interne = gris */
     --card:       #FFFFFF;
-    --line:       #E3E7ED;
-    --litt:       #2E6FB7;   /* bleu Littéralis */
-    --geodp:      #C8770F;   /* ambre GEODP */
-    --good:       #2F7D52;
-    --good-bg:    #E7F2EC;
-    --bad:        #B43A2E;
-    --bad-bg:     #F7E7E4;
-    --warn:       #B8860B;
-    --muted:      #6B7890;
-    --prod:       #2E6FB7;
-    --interne:    #8A93A6;
-    --support:    #C8770F;
-    --radius:     10px;
+    --line:       #E8E6E0;
+    --paper:      #F8F8F6;
+    --radius:     12px;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -35,11 +44,12 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* ── Bandeau ── */
+  /* ── Bandeau (façon index : surface blanche, bordure basse) ── */
   header {
-    background: var(--ink);
-    color: #fff;
-    padding: 20px 28px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    color: var(--ink);
+    padding: 24px 40px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -48,42 +58,38 @@
   }
   .brand { display: flex; flex-direction: column; }
   .brand .eyebrow {
-    font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
-    color: #8FA6C9; font-weight: 600;
+    font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--muted-2); font-weight: 600;
   }
   .brand h1 {
-    font-family: 'Fraunces', serif; font-weight: 600;
-    font-size: 26px; letter-spacing: -.01em; margin-top: 2px;
+    font-weight: 600; font-size: 18px; letter-spacing: -.01em; margin-top: 4px;
   }
   .selectors { display: flex; gap: 10px; align-items: center; }
   .selectors select {
     appearance: none;
-    background: rgba(255,255,255,.08);
-    color: #fff;
-    border: 1px solid rgba(255,255,255,.22);
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 9px 34px 9px 14px;
     font-family: inherit; font-size: 14px; font-weight: 600;
     cursor: pointer;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='white' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%231A1A18' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 12px center;
   }
-  .selectors select:focus { outline: 2px solid #8FA6C9; outline-offset: 1px; }
-  .selectors select option {
-    background: #fff;
-    color: var(--ink);
-    font-weight: 500;
-  }
+  .selectors select:hover { border-color: #C8C6C0; }
+  .selectors select:focus { outline: 2px solid var(--litt); outline-offset: 1px; }
+  .selectors select option { background: #fff; color: var(--ink); font-weight: 500; }
   /* lien retour accueil */
   .home-link {
     display: inline-flex; align-items: center; gap: 7px;
-    color: #8FA6C9; text-decoration: none; font-size: 13px; font-weight: 600;
-    padding: 8px 12px; border-radius: 8px;
-    border: 1px solid rgba(255,255,255,.18);
-    transition: background .15s, color .15s;
+    color: var(--muted); text-decoration: none; font-size: 13px; font-weight: 600;
+    padding: 6px 12px; border-radius: 8px;
+    border: 1px solid var(--border);
+    transition: background .15s, color .15s, border-color .15s;
   }
-  .home-link:hover { background: rgba(255,255,255,.08); color: #fff; }
+  .home-link:hover { background: var(--bg); color: var(--ink); border-color: #C8C6C0; }
 
   main { max-width: 1180px; margin: 0 auto; padding: 28px 24px 60px; }
 
@@ -92,10 +98,10 @@
   .section-head {
     display: flex; align-items: baseline; gap: 12px;
     margin-bottom: 14px; padding-bottom: 8px;
-    border-bottom: 2px solid var(--ink);
+    border-bottom: 1px solid var(--border);
   }
   .section-head h2 {
-    font-family: 'Fraunces', serif; font-weight: 600; font-size: 20px;
+    font-weight: 600; font-size: 16px; letter-spacing: -.01em;
   }
   .section-head .note { font-size: 12.5px; color: var(--muted); }
 

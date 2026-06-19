@@ -15,6 +15,8 @@
     --blue: #185FA5; --blue-light: #E6F1FB;
     --green: #3B6D11; --green-light: #EAF3DE;
     --teal: #0F6E56; --teal-light: #E1F5EE;
+    --purple: #534AB7; --purple-light: #EEEDFE;
+    --amber: #854F0B; --amber-light: #FAEEDA;
   }
   body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text-primary); min-height: 100vh; }
   header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 28px 40px; display: flex; align-items: center; justify-content: space-between; }
@@ -34,10 +36,10 @@
   .card:hover .card-arrow { transform: translate(2px, -2px); color: var(--text-secondary); }
   .blue .card-accent { background: var(--blue); }
   .blue .card-icon { background: var(--blue-light); color: var(--blue); }
+  .teal .card-accent { background: var(--teal); }
+  .teal .card-icon { background: var(--teal-light); color: var(--teal); }
   .green .card-accent { background: var(--green); }
   .green .card-icon { background: var(--green-light); color: var(--green); }
-  --purple: #534AB7; --purple-light: #EEEDFE;
-  --amber: #854F0B; --amber-light: #FAEEDA;
   .purple .card-accent { background: var(--purple); }
   .purple .card-icon { background: var(--purple-light); color: var(--purple); }
   .amber .card-accent { background: var(--amber); }
@@ -69,11 +71,11 @@
 
   <p class="section-label">Dashboards</p>
   <div class="cards">
-    <a href="rapport_global.html" class="card blue">
+    <a href="dashboard_mensuel.html" class="card teal">
       <div class="card-accent"></div>
-      <div class="card-icon">📊</div>
-      <h2>Rapport global</h2>
-      <p>Vue d'ensemble : CA, charge, commandes, backlog et ancienneté par mois.</p>
+      <div class="card-icon">📅</div>
+      <h2>Tableau de bord mensuel</h2>
+      <p>Synthèse du mois : CA vs objectifs, charge, répartition des heures et clôtures. Sélecteur mois / année.</p>
       <span class="card-arrow">↗</span>
     </a>
     <a href="objectifs.html" class="card green">
