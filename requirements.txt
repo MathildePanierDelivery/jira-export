@@ -1,0 +1,5 @@
+jira
+requests
+pandas
+openpyxl
+holidays
