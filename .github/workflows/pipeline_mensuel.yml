@@ -42,7 +42,7 @@ jobs:
           cache: 'pip'
 
       - name: Installer les dépendances
-        run: pip install jira requests pandas openpyxl holidays
+        run: pip install -r requirements.txt
 
       # ── Reconstituer le fichier absences depuis le Secret (jamais commité) ──
       - name: Restaurer absences_2026.xlsx
