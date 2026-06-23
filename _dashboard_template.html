@@ -267,6 +267,7 @@ function render() {
   const ch = d.charge || {};
   const cm = d.commandes || {};
   const bl = d.backlog || {};
+  const cl = d.clotures || {};
 
   let html = '';
 
@@ -314,26 +315,64 @@ function render() {
       ${donutCard("GEODP", "geodp", segGe)}
     </div></div>`;
 
-  /* ═══ Détail productif (projet/rework) ═══ */
-  /* L'historique actuel ne distingue que Rework dans le productif.
-     Projet = productif - rework. Le détail "gratuit" viendra avec l'enrichissement. */
-  const projL = Math.max(0,(ch.prod_litt||0)-(ch.rew_litt||0));
-  const projGe= Math.max(0,(ch.prod_geodp||0)-(ch.rew_geodp||0));
+  /* ═══ Charge à date ═══ */
+  const hs = ch.heures_saisies || 0;
+  const ca_att = ch.capacite_attendue || 0;
+  const ca_tot = ch.capacite_totale || 0;
+  const pctCompletion = ca_att > 0 ? Math.round(hs / ca_att * 100) : 0;
+  const pctMois = ca_tot > 0 ? Math.round(hs / ca_tot * 100) : 0;
+  const complColor = (pctCompletion > 100 || pctCompletion < 70) ? 'var(--bad)' : 'var(--good)';
+  html += `<div class="section"><div class="section-head">
+    <h2>Charge à date</h2>
+    <span class="note">heures saisies au dernier relevé</span></div>
+    <div class="grid grid-3">
+      <div class="card">
+        <div class="label">Heures saisies</div>
+        <div class="value">${Math.round(hs)} h</div>
+        <div class="sub">sur ${Math.round(ca_att)} h attendues à date</div>
+        <div class="bar"><i style="width:${Math.min(pctCompletion,100)}%;background:${complColor}"></i></div>
+        <div class="sub"><span class="pct" style="color:${complColor}">${pctCompletion}%</span> de complétion</div>
+      </div>
+      <div class="card">
+        <div class="label">Capacité totale du mois</div>
+        <div class="value">${Math.round(ca_tot)} h</div>
+        <div class="sub">disponible sur le mois entier</div>
+        <div class="bar"><i style="width:${Math.min(pctMois,100)}%;background:var(--litt)"></i></div>
+        <div class="sub">${pctMois}% de la capacité consommée</div>
+      </div>
+      <div class="card">
+        <div class="label">Capacité attendue à date</div>
+        <div class="value">${Math.round(ca_att)} h</div>
+        <div class="sub">au prorata des jours ouvrés écoulés</div>
+      </div>
+    </div></div>`;
+
+  /* ═══ Détail productif (projet / gratuit / rework) ═══ */
+  /* Si le détail "gratuit" est dans l'historique, on l'affiche ;
+     sinon repli sur projet = productif - rework (anciens mois). */
+  const hasGratuit = (ch.proj_litt != null) || (ch.gratuit_litt != null);
+  const projL = hasGratuit ? (ch.proj_litt||0)  : Math.max(0,(ch.prod_litt||0)-(ch.rew_litt||0));
+  const projGe= hasGratuit ? (ch.proj_geodp||0) : Math.max(0,(ch.prod_geodp||0)-(ch.rew_geodp||0));
+  const gratL = ch.gratuit_litt||0;
+  const gratGe= ch.gratuit_geodp||0;
   const dG = [
-    {label:'Projet', v:projL+projGe, c:'var(--litt)'},
-    {label:'Rework', v:(ch.rew_litt||0)+(ch.rew_geodp||0), c:'var(--bad)'},
+    {label:'Projet (CA)', v:projL+projGe, c:'var(--litt)'},
+    {label:'Gratuit',     v:gratL+gratGe, c:'var(--geodp)'},
+    {label:'Rework',      v:(ch.rew_litt||0)+(ch.rew_geodp||0), c:'var(--bad)'},
   ];
   const dL = [
-    {label:'Projet', v:projL, c:'var(--litt)'},
-    {label:'Rework', v:ch.rew_litt, c:'var(--bad)'},
+    {label:'Projet (CA)', v:projL, c:'var(--litt)'},
+    {label:'Gratuit',     v:gratL, c:'var(--geodp)'},
+    {label:'Rework',      v:ch.rew_litt, c:'var(--bad)'},
   ];
   const dGe = [
-    {label:'Projet', v:projGe, c:'var(--litt)'},
-    {label:'Rework', v:ch.rew_geodp, c:'var(--bad)'},
+    {label:'Projet (CA)', v:projGe, c:'var(--litt)'},
+    {label:'Gratuit',     v:gratGe, c:'var(--geodp)'},
+    {label:'Rework',      v:ch.rew_geodp, c:'var(--bad)'},
   ];
   html += `<div class="section"><div class="section-head">
     <h2>Détail du temps productif</h2>
-    <span class="note">projet vs rework · le détail « gratuit » arrive avec l'enrichissement</span></div>
+    <span class="note">projet avec CA · gratuit · rework</span></div>
     <div class="grid grid-3">
       ${donutCard("Global", "", dG)}
       ${donutCard("Littéralis", "litt", dL)}
@@ -342,20 +381,19 @@ function render() {
 
   /* ═══ Clôtures ═══ */
   html += `<div class="section"><div class="section-head">
-    <h2>Clôtures</h2></div>
+    <h2>Clôtures du mois</h2>
+    <span class="note">projets terminés ce mois</span></div>
     <div class="grid grid-3">
-      <div class="card"><div class="label">Projets clôturés (stock fin de mois)</div>
-        <div class="value">${bl.nb_projets ?? '—'}</div>
-        <div class="sub">épics projet ouvertes à date</div></div>
-      <div class="card"><div class="label">Rework en stock</div>
-        <div class="value">${bl.nb_rework ?? '—'}</div>
-        <div class="sub">épics rework ouvertes à date</div></div>
+      <div class="card"><div class="label">Projets clôturés</div>
+        <div class="value">${cl.projets ?? '—'}</div>
+        <div class="sub">terminés durant le mois</div></div>
+      <div class="card"><div class="label">dont Rework</div>
+        <div class="value" style="color:${(cl.rework||0)>0?'var(--bad)':'var(--ink)'}">${cl.rework ?? '—'}</div>
+        <div class="sub">rework clôturés ce mois</div></div>
       <div class="card"><div class="label">Commandes reçues</div>
         <div class="value">${cm.nb ?? '—'}</div>
         <div class="sub">épics créées ce mois</div></div>
-    </div>
-    <p class="empty" style="margin-top:10px">Le nombre de projets <em>clôturés dans le mois</em> (flux) sera ajouté avec l'enrichissement de l'historique ; les chiffres ci-dessus reflètent le stock à date.</p>
-    </div>`;
+    </div></div>`;
 
   app.innerHTML = html;
 }

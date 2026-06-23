@@ -152,6 +152,14 @@ def maj_historique(contexte):
             "Support Total": c["sup_litt"] + c["sup_geodp"],
             "Productif Total": c["prod_litt"] + c["prod_geodp"],
         }
+        # Détail productif : projet (avec CA) et gratuit, par solution
+        if "proj_litt" in c:
+            vals["Projet Litt"]   = c["proj_litt"]
+            vals["Projet GEODP"]  = c["proj_geodp"]
+            vals["Gratuit Litt"]  = c["gratuit_litt"]
+            vals["Gratuit GEODP"] = c["gratuit_geodp"]
+            vals["Projet Total"]  = c["proj_litt"] + c["proj_geodp"]
+            vals["Gratuit Total"] = c["gratuit_litt"] + c["gratuit_geodp"]
         # Heures à date (si fournies)
         heures = contexte.get("heures")
         if heures:

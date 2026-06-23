@@ -1680,6 +1680,8 @@ try:
             "prod_geodp": _h(df_wl, "GEODP", CAT_PROJET) + _h(df_wl, "GEODP", CAT_REWORK) + _h(df_wl, "GEODP", CAT_GRATUIT),
             "sup_litt": _h(df_wl, "LITTERALIS", CAT_SUPPORT), "sup_geodp": _h(df_wl, "GEODP", CAT_SUPPORT),
             "rew_litt": _h(df_wl, "LITTERALIS", CAT_REWORK), "rew_geodp": _h(df_wl, "GEODP", CAT_REWORK),
+            "proj_litt": _h(df_wl, "LITTERALIS", CAT_PROJET), "proj_geodp": _h(df_wl, "GEODP", CAT_PROJET),
+            "gratuit_litt": _h(df_wl, "LITTERALIS", CAT_GRATUIT), "gratuit_geodp": _h(df_wl, "GEODP", CAT_GRATUIT),
             "interne": df_wl[df_wl["Catégorie"] == "Interne"]["Temps (h)"].sum() if not df_wl.empty else 0,
         },
         "backlog": {

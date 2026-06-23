@@ -41,6 +41,7 @@ def build_data():
     df_charge = pd.read_excel(xls, "charge")    if "charge" in xls.sheet_names else pd.DataFrame()
     df_cmd    = pd.read_excel(xls, "commandes") if "commandes" in xls.sheet_names else pd.DataFrame()
     df_bl     = pd.read_excel(xls, "backlog")   if "backlog" in xls.sheet_names else pd.DataFrame()
+    df_clot   = pd.read_excel(xls, "clotures")  if "clotures" in xls.sheet_names else pd.DataFrame()
 
     data = {}
 
@@ -77,10 +78,17 @@ def build_data():
             "prod_litt": pl, "prod_geodp": pg,
             "sup_litt": sl, "sup_geodp": sg,
             "rew_litt": rl, "rew_geodp": rg,
+            "proj_litt":    _num(r.get("Projet Litt")),
+            "proj_geodp":   _num(r.get("Projet GEODP")),
+            "gratuit_litt": _num(r.get("Gratuit Litt")),
+            "gratuit_geodp":_num(r.get("Gratuit GEODP")),
             "interne": _num(r.get("Interne")),
             "prod_total": _num(r.get("Productif Total")) or (pl + pg),
             "sup_total":  _num(r.get("Support Total")) or (sl + sg),
             "rew_total":  _num(r.get("Rework Total")) or (rl + rg),
+            "heures_saisies":     _num(r.get("Heures saisies à date")),
+            "capacite_attendue":  _num(r.get("Capacité attendue à date")),
+            "capacite_totale":    _num(r.get("Capacité totale du mois")),
         }
 
     col_montant = None
@@ -109,6 +117,15 @@ def build_data():
             "mobilisable": _num(r.get("total_mobilisable_TOTAL")),
             "nb_projets":  int(_num(r.get("nb_projets_TOTAL"))),
             "nb_rework":   int(_num(r.get("nb_rework_TOTAL"))),
+        }
+
+    for _, r in df_clot.iterrows():
+        mois, annee = r.get("Mois"), r.get("Année")
+        if pd.isna(mois) or pd.isna(annee):
+            continue
+        slot(annee, mois)["clotures"] = {
+            "projets": int(_num(r.get("Projets clôturés"))),
+            "rework":  int(_num(r.get("dont Rework"))),
         }
 
     return data
