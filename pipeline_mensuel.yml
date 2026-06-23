@@ -1,0 +1,127 @@
+# ══════════════════════════════════════════════════════════════════
+# Pipeline KPI — orchestration temporelle
+# ══════════════════════════════════════════════════════════════════
+# CHAQUE JOUR      : collecte → contrôle CA → export → historique → dashboard
+#                    (sur le MOIS COURANT ; photo backlog figée au 1er passage)
+# 1er JOUR DU MOIS : EN PLUS → fige le mois PRÉCÉDENT (mode precedent)
+#                    + capture le PRÉVISIONNEL du mois qui commence
+#
+# Données sensibles (absences, cache) : jamais commitées (Secret + gitignore).
+# ══════════════════════════════════════════════════════════════════
+
+name: Pipeline mensuel
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Mode de lancement manuel'
+        required: false
+        default: 'courant'
+        type: choice
+        options: [courant, precedent]
+  schedule:
+    - cron: '0 6 * * *'        # tous les jours 06:00 UTC
+
+permissions:
+  contents: write
+
+jobs:
+  generer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Installer les dépendances
+        run: pip install -r requirements.txt
+
+      # ── Déterminer la date : premier jour du mois ? ──
+      - name: Orchestration (analyse de la date)
+        id: orch
+        run: python orchestration.py
+
+      - name: Restaurer absences_2026.xlsx
+        env:
+          ABSENCES_B64: ${{ secrets.ABSENCES_B64 }}
+        run: |
+          if [ -n "$ABSENCES_B64" ]; then
+            echo "$ABSENCES_B64" | base64 -d > absences_2026.xlsx
+            echo "✅ absences restaurées"
+          else
+            echo "⚠️ Secret ABSENCES_B64 absent"
+          fi
+
+      # ════════════════════════════════════════════════════════════
+      # BLOC 1 — Le 1er du mois UNIQUEMENT : figer le mois PRÉCÉDENT
+      # ════════════════════════════════════════════════════════════
+      - name: "[1er du mois] Figer le mois précédent"
+        if: steps.orch.outputs.is_premier_jour == 'true'
+        env:
+          JIRA_URL:       ${{ secrets.JIRA_URL }}
+          JIRA_EMAIL:     ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          TEMPO_TOKEN:    ${{ secrets.TEMPO_TOKEN }}
+        run: |
+          echo "── Figement du mois précédent (mode precedent) ──"
+          python collect_jira_worklogs.py --mois precedent --refresh
+          python export_mensuel.py
+          rm -f jira_cache.pkl
+
+      # ════════════════════════════════════════════════════════════
+      # BLOC 2 — TOUS LES JOURS : le mois courant
+      # ════════════════════════════════════════════════════════════
+      - name: Collecter (mois courant)
+        env:
+          JIRA_URL:       ${{ secrets.JIRA_URL }}
+          JIRA_EMAIL:     ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          TEMPO_TOKEN:    ${{ secrets.TEMPO_TOKEN }}
+        run: python collect_jira_worklogs.py --mois courant --refresh
+
+      - name: Contrôle de cohérence CA
+        continue-on-error: true
+        run: python controle_coherence_ca.py
+
+      - name: Générer l'export + historique
+        env:
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+        run: python export_mensuel.py
+
+      # ── Le 1er du mois : capturer aussi le prévisionnel ──
+      - name: "[1er du mois] Capturer le prévisionnel"
+        if: steps.orch.outputs.is_premier_jour == 'true'
+        run: python generate_previsionnel.py
+
+      - name: Générer le dashboard
+        run: python generate_dashboard_mensuel.py
+
+      # ── Nettoyer les fichiers sensibles AVANT publication ──
+      - name: Supprimer les fichiers sensibles
+        if: always()
+        run: |
+          rm -f jira_cache.pkl absences_2026.xlsx
+          echo "🧹 fichiers sensibles supprimés"
+
+      # ── Publier les livrables non sensibles ──
+      - name: Publier
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dashboard_mensuel.html index.html _historique.xlsx previsionnel_2026.xlsx 2>/dev/null || true
+          git add jira_export_*.xlsx 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "Rien à publier"
+          else
+            git commit -m "MAJ pipeline $(date +'%Y-%m-%d')"
+            git pull --rebase --autostash origin ${{ github.ref_name }} || true
+            git push
+          fi
