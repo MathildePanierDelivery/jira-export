@@ -75,6 +75,7 @@ JIRA_FIELDS = [
     "customfield_22108",   # Deal Type
     "customfield_22998",   # CA du mois en cours
     "customfield_23103",   # Type d'Epic (Rework ?)
+    "customfield_23595",   # Niveau de confiance (prévisionnel pondéré)
     "customfield_23608",
     "customfield_23610",   # Revenu planifié
     "customfield_23955",
