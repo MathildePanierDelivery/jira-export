@@ -156,6 +156,7 @@ def maj_historique(contexte):
         ws = wb["backlog"]
         h = headers_de(ws)
         b = contexte["backlog"]
+        # Valeurs COURANTES (mises à jour à chaque run)
         vals = {
             "total_backlog_TOTAL": b["total"], "total_backlog_LITT": b["total_litt"],
             "total_backlog_GEODP": b["total_geodp"],
@@ -164,7 +165,27 @@ def maj_historique(contexte):
             "total_bloque_LITT": b["bloque_litt"], "total_mobilisable_LITT": b["mob_litt"],
             "total_bloque_GEODP": b["bloque_geodp"], "total_mobilisable_GEODP": b["mob_geodp"],
         }
-        _upsert_ligne(ws, cle, vals, h)
+        ligne = _upsert_ligne(ws, cle, vals, h)
+
+        # PHOTO DÉBUT DE MOIS : figée au premier run du mois, jamais écrasée.
+        # On (re)lit les headers car _upsert a pu ajouter des colonnes.
+        h = headers_de(ws)
+        col_idx = {hh: i + 1 for i, hh in enumerate(h) if hh}
+        photo = {
+            "backlog_debut_mois_TOTAL": b["total"],
+            "backlog_debut_mois_LITT":  b["total_litt"],
+            "backlog_debut_mois_GEODP": b["total_geodp"],
+        }
+        for nom, valeur in photo.items():
+            # créer la colonne si elle n'existe pas encore
+            if nom not in col_idx:
+                new_col = ws.max_column + 1
+                ws.cell(1, new_col, nom)
+                col_idx[nom] = new_col
+            cell = ws.cell(ligne, col_idx[nom])
+            # n'écrire QUE si la case est vide (photo non encore prise ce mois)
+            if cell.value in (None, ""):
+                cell.value = valeur
 
     # ── Onglet commandes (liste) ──
     if "commandes" in wb.sheetnames and contexte.get("commandes_lignes") is not None:
