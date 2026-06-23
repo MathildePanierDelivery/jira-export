@@ -69,12 +69,16 @@ Les worklogs sont saisis via **Tempo**, pas l'API Jira native (qui renvoie un co
 ## Accumulation & snapshots dans l'historique
 
 À chaque run, `export_mensuel.py` écrit (ou écrase) la ligne du **mois courant** dans
-`_historique.xlsx` (onglets `ca`, `charge`, `backlog`, `commandes`, `ca_deal`, `anciennete`).
+`_historique.xlsx` (onglets `ca`, `charge`, `backlog`, `commandes`, `ca_deal`, `anciennete`, `clotures`).
 
 - **CA N-1** récupéré automatiquement depuis `ca_2025.xlsx`.
 - **Ancienneté** : seules les épics avec du CA déclaré.
-- **Backlog début de mois** : photo figée au 1er run du mois (colonnes `backlog_debut_mois_*`),
-  jamais écrasée → permet de suivre la tendance mensuelle.
+- **Charge** : productif (détaillé en projet avec CA / gratuit / rework), support, interne, par solution ; plus heures saisies à date, capacité attendue et capacité totale.
+- **Backlog début de mois** : photo figée au 1er run du mois (colonnes `backlog_debut_mois_*`), jamais écrasée → tendance mensuelle.
+- **Clôtures** : projets clôturés *dans le mois* (flux) + dont rework.
+
+> Le détail « gratuit » = épics de type Prestation offerte + Commande sans prestation + Maintenance.
+> Les nouvelles colonnes se créent automatiquement dans l'historique au premier run qui les fournit.
 
 ---
 
@@ -183,6 +187,7 @@ Bérénice Bossard · Marine Masingarbe · Duncan Hamelin · Maxime Pontonnier �
 ## Chantiers à venir
 
 - Comparaison prévu / réalisé (taux de report du prévisionnel)
-- Enrichissement du dashboard (détail productif/gratuit, heures à date, capacité dynamique)
+- Dashboard des objectifs (suivi annuel)
+- Zoom projets avec CA : heures à débloquer / dépassement (en attente de consolidation Jira)
 - Suivi continu des temps par projet (`Temps_Clockwork`)
 - Le fichier de reconnaissance CA détaillé reste généré **en local** (non publié, sensible)
