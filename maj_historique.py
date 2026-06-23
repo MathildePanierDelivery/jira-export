@@ -69,10 +69,13 @@ def _upsert_ligne(ws, cle_cols, valeurs, headers):
             if k in col_idx:
                 ws.cell(ligne_cible, col_idx[k], v)
 
-    # écrire les valeurs (seulement les colonnes fournies)
+    # écrire les valeurs (créer la colonne si elle n'existe pas encore)
     for nom, val in valeurs.items():
-        if nom in col_idx:
-            ws.cell(ligne_cible, col_idx[nom], val)
+        if nom not in col_idx:
+            new_col = ws.max_column + 1
+            ws.cell(1, new_col, nom)        # créer l'en-tête
+            col_idx[nom] = new_col
+        ws.cell(ligne_cible, col_idx[nom], val)
     return ligne_cible
 
 
@@ -149,6 +152,12 @@ def maj_historique(contexte):
             "Support Total": c["sup_litt"] + c["sup_geodp"],
             "Productif Total": c["prod_litt"] + c["prod_geodp"],
         }
+        # Heures à date (si fournies)
+        heures = contexte.get("heures")
+        if heures:
+            vals["Heures saisies à date"]   = round(heures["heures_saisies"], 2)
+            vals["Capacité attendue à date"] = round(heures["capacite_attendue"], 2)
+            vals["Capacité totale du mois"]  = round(heures["capacite_totale"], 2)
         _upsert_ligne(ws, cle, vals, h)
 
     # ── Onglet backlog ──
@@ -186,6 +195,19 @@ def maj_historique(contexte):
             # n'écrire QUE si la case est vide (photo non encore prise ce mois)
             if cell.value in (None, ""):
                 cell.value = valeur
+
+    # ── Onglet clotures (flux : projets clôturés CE MOIS) ──
+    clot = contexte.get("clotures")
+    if clot:
+        if "clotures" not in wb.sheetnames:
+            wsc = wb.create_sheet("clotures")
+            wsc.append(["Mois", "Année", "Projets clôturés", "dont Rework"])
+        wsc = wb["clotures"]
+        hc = headers_de(wsc)
+        _upsert_ligne(wsc, cle, {
+            "Projets clôturés": clot["nb_projets_clotures"],
+            "dont Rework": clot["nb_rework_clotures"],
+        }, hc)
 
     # ── Onglet commandes (liste) ──
     if "commandes" in wb.sheetnames and contexte.get("commandes_lignes") is not None:

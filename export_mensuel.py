@@ -1694,6 +1694,15 @@ try:
         "commandes_lignes": commandes_lignes,
         "ca_deal_lignes": ca_deal_lignes,
         "anciennete_lignes": anciennete_lignes,
+        "clotures": {
+            "nb_projets_clotures": nb_projets,   # flux : clôturés CE MOIS
+            "nb_rework_clotures": nb_rework,
+        },
+        "heures": {
+            "heures_saisies": float(charge_reelle),
+            "capacite_attendue": float(cap_attendue_a_date),
+            "capacite_totale": float(cap_mensuelle_totale),
+        },
     }
     maj_historique(contexte)
 except Exception as e:
