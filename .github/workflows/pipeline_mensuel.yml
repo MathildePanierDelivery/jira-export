@@ -65,6 +65,11 @@ jobs:
           TEMPO_TOKEN:    ${{ secrets.TEMPO_TOKEN }}
         run: python collect_jira_worklogs.py --mois "${{ github.event.inputs.mois || 'courant' }}" --refresh
 
+      # ── Contrôle de cohérence du CA (rapport dans le résumé du run, n'échoue jamais) ──
+      - name: Contrôle de cohérence CA
+        continue-on-error: true
+        run: python controle_coherence_ca.py
+
       # ── Étape 2 : générer l'export Excel (8 onglets) + accumulation historique ──
       - name: Générer l'export Excel
         env:
