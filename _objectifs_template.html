@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suivi des objectifs d'équipe — PS France</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F8F8F6; --surface: #FFFFFF; --border: #E8E6E0;
+    --ink: #1A1A18; --muted: #6B6B67; --muted-2: #9B9B96;
+    --blue: #185FA5; --blue-light: #E6F1FB;
+    --green: #3B6D11; --green-light: #EAF3DE;
+    --amber: #854F0B; --amber-light: #FAEEDA;
+    --teal: #0F6E56; --teal-light: #E1F5EE;
+    --bad: #993C1D;
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+  header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 24px 40px; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+  }
+  .brand { display: flex; flex-direction: column; }
+  .home-link {
+    display: inline-flex; align-items: center; gap: 7px; align-self: flex-start; margin-bottom: 8px;
+    color: var(--muted); text-decoration: none; font-size: 13px; font-weight: 600;
+    padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border);
+    transition: background .15s, color .15s;
+  }
+  .home-link:hover { background: var(--bg); color: var(--ink); border-color: #C8C6C0; }
+  .brand .eyebrow { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-2); font-weight: 600; }
+  .brand h1 { font-size: 18px; font-weight: 600; letter-spacing: -.01em; margin-top: 4px; }
+  main { max-width: 980px; margin: 0 auto; padding: 28px 24px 60px; }
+
+  .obj-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 26px 28px; margin-bottom: 22px; position: relative; overflow: hidden;
+  }
+  .obj-accent { position: absolute; top: 0; left: 0; right: 0; height: 4px; }
+  .obj-card.ca .obj-accent { background: var(--blue); }
+  .obj-card.rework .obj-accent { background: var(--amber); }
+  .obj-card.csat .obj-accent { background: var(--teal); }
+
+  .obj-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+  .obj-title { font-size: 16px; font-weight: 700; }
+  .obj-sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+  .big-num { font-size: 30px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .big-num.ca { color: var(--blue); }
+  .big-num.rework { color: var(--amber); }
+  .big-target { font-size: 14px; color: var(--muted); font-weight: 500; }
+
+  /* Barre de progression simple */
+  .gauge { margin-top: 22px; }
+  .gauge-track {
+    position: relative; height: 14px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+  }
+  .gauge-fill { position: absolute; top: 0; left: 0; bottom: 0; border-radius: 7px; transition: width .4s; }
+  .obj-card.ca .gauge-fill { background: linear-gradient(90deg, #185FA5, #2E7BC4); }
+  .obj-card.rework .gauge-fill { background: linear-gradient(90deg, #854F0B, #B5740F); }
+  .gauge-caption {
+    display: flex; justify-content: space-between; margin-top: 7px;
+    font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums;
+  }
+
+  /* Liste des paliers (prime) */
+  .paliers { margin-top: 22px; display: flex; flex-direction: column; gap: 8px; }
+  .palier-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 11px 16px; border-radius: 10px;
+    background: var(--bg); border: 1px solid var(--border);
+  }
+  .palier-row.atteint { background: var(--green-light); border-color: #9CC474; }
+  .palier-check {
+    width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700;
+    background: var(--surface); border: 1.5px solid var(--border); color: var(--muted-2);
+  }
+  .palier-row.atteint .palier-check { background: var(--green); border-color: var(--green); color: #fff; }
+  .palier-name { font-weight: 600; font-size: 13.5px; min-width: 96px; }
+  .palier-cible { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .palier-prime {
+    margin-left: auto; font-size: 12px; font-weight: 600;
+    padding: 3px 11px; border-radius: 99px;
+    background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+  }
+  .palier-row.atteint .palier-prime { background: #fff; color: var(--green); border-color: #9CC474; }
+
+  .obj-context { font-size: 12.5px; color: var(--muted); margin-top: 16px; font-style: italic; }
+
+  /* CSAT */
+  .csat-link {
+    display: inline-flex; align-items: center; gap: 10px; margin-top: 8px;
+    background: var(--teal-light); color: var(--teal); text-decoration: none;
+    padding: 12px 20px; border-radius: 10px; font-weight: 600; font-size: 14px;
+    border: 1px solid #5DCAA5; transition: background .15s;
+  }
+  .csat-link:hover { background: #D0EEE4; }
+
+
+  footer { text-align: center; color: var(--muted-2); font-size: 12px; padding: 24px; }
+  @media (max-width: 640px) { .obj-head { flex-direction: column; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <a href="index.html" class="home-link">← Accueil</a>
+    <span class="eyebrow">PS France · Pilotage de production</span>
+    <h1>Suivi des objectifs d'équipe</h1>
+  </div>
+</header>
+
+<main id="app"></main>
+<footer>Objectifs révisables dans objectifs.xlsx · réalisé issu de l'historique</footer>
+
+<script>
+const PAYLOAD = __PAYLOAD__;
+
+const eur = n => (n||0).toLocaleString('fr-FR', {maximumFractionDigits:0}) + ' €';
+const eurM = n => (n/1e6).toLocaleString('fr-FR', {maximumFractionDigits:2}) + ' M€';
+
+function gauge(realise, paliers, type) {
+  const maxCible = Math.max(...paliers.map(p => p.cible));
+  const pos = Math.min(realise / maxCible * 100, 100);
+  const fmt = type === 'ca' ? eurM : (n => n + ' clôturés');
+  return `<div class="gauge">
+    <div class="gauge-track"><div class="gauge-fill" style="width:${pos}%"></div></div>
+    <div class="gauge-caption">
+      <span>${Math.round(pos)}% de la cible finale</span>
+      <span>${fmt(realise)} / ${fmt(maxCible)}</span>
+    </div></div>`;
+}
+
+function paliersList(realise, paliers, type) {
+  const fmt = type === 'ca' ? eurM : (n => n + ' clôturés');
+  return `<div class="paliers">` + paliers.map(p => {
+    const ok = realise >= p.cible;
+    return `<div class="palier-row ${ok?'atteint':''}">
+      <div class="palier-check">${ok?'✓':''}</div>
+      <span class="palier-name">${p.nom}</span>
+      <span class="palier-cible">${fmt(p.cible)}</span>
+      <span class="palier-prime">prime ${p.seuil}%</span>
+    </div>`;
+  }).join('') + `</div>`;
+}
+
+function render() {
+  const o = PAYLOAD.objectifs, r = PAYLOAD.realise;
+  let html = '';
+
+  /* ═══ Objectif CA ═══ */
+  const caTarget = Math.max(...o.ca.paliers.map(p => p.cible));
+  html += `<div class="obj-card ca"><div class="obj-accent"></div>
+    <div class="obj-head">
+      <div>
+        <div class="obj-title">Atteindre le CA non récurrent (Coordin)</div>
+        <div class="obj-sub">CA cumulé réalisé depuis janvier · cible révisable</div>
+      </div>
+      <div style="text-align:right">
+        <div class="big-num ca">${eur(r.ca_cumule)}</div>
+        <div class="big-target">cible ${eur(caTarget)}</div>
+      </div>
+    </div>
+    ${gauge(r.ca_cumule, o.ca.paliers, 'ca')}
+    ${paliersList(r.ca_cumule, o.ca.paliers, 'ca')}
+  </div>`;
+
+  /* ═══ Objectif Rework ═══ */
+  const rwTarget = Math.max(...o.rework.paliers.map(p => p.cible));
+  html += `<div class="obj-card rework"><div class="obj-accent"></div>
+    <div class="obj-head">
+      <div>
+        <div class="obj-title">Réduire le backlog « Rework »</div>
+        <div class="obj-sub">Projets rework clôturés cumulés depuis janvier</div>
+      </div>
+      <div style="text-align:right">
+        <div class="big-num rework">${r.rework_cumule}</div>
+        <div class="big-target">cible ${rwTarget} clôturés</div>
+      </div>
+    </div>
+    ${gauge(r.rework_cumule, o.rework.paliers, 'rework')}
+    ${paliersList(r.rework_cumule, o.rework.paliers, 'rework')}
+    ${o.rework.contexte ? `<div class="obj-context">${o.rework.contexte}</div>` : ''}
+  </div>`;
+
+  /* ═══ CSAT ═══ */
+  html += `<div class="obj-card csat"><div class="obj-accent"></div>
+    <div class="obj-head">
+      <div>
+        <div class="obj-title">Améliorer la satisfaction client (CSAT)</div>
+        <div class="obj-sub">Mesure suivie dans un fichier dédié · améliorer de 10% entre Q1 et Q4 2026</div>
+      </div>
+    </div>
+    ${o.csat.lien ? `<a class="csat-link" href="${o.csat.lien}" target="_blank" rel="noopener">
+      📊 Ouvrir le fichier de suivi CSAT</a>` : `<p class="obj-context">Lien non renseigné dans objectifs.xlsx</p>`}
+  </div>`;
+
+  document.getElementById('app').innerHTML = html;
+}
+render();
+</script>
+</body>
+</html>
