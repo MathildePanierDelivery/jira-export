@@ -156,6 +156,24 @@
 
   .empty { color: var(--muted); font-style: italic; font-size: 13px; }
 
+  /* Barres empilées */
+  .stack-wrap { padding: 4px 2px; }
+  .stack-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .stack-name { width: 90px; font-size: 13.5px; font-weight: 600; flex-shrink: 0; }
+  .stack-track {
+    flex: 1; height: 30px; display: flex; border-radius: 7px; overflow: hidden;
+    background: var(--bg); border: 1px solid var(--border);
+  }
+  .stack-seg {
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums;
+    min-width: 2px; transition: width .3s; white-space: nowrap; overflow: hidden;
+  }
+  .stack-total { width: 52px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; font-size: 13.5px; flex-shrink: 0; }
+  .stack-legend { display: flex; gap: 18px; margin-top: 6px; padding-left: 102px; flex-wrap: wrap; }
+  .stack-leg-item { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+  .stack-leg-item .sw { width: 11px; height: 11px; border-radius: 3px; }
+
   footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px; }
 
   @media print {
@@ -183,7 +201,7 @@
 <footer>Données issues du suivi de production · généré automatiquement</footer>
 
 <script>
-const DATA = {"2026": {"Janvier": {"ca": {"global": 71232.501, "litt": 29671.556, "geodp": 41560.945, "obj_global": 140830.0, "obj_litt": 86170.0, "obj_geodp": 54660.0, "py_global": 0.0, "py_litt": 0.0, "py_geodp": 0.0}, "charge": {"prod_litt": 196.0, "prod_geodp": 155.0, "sup_litt": 69.75, "sup_geodp": 0.0, "rew_litt": 45.0, "rew_geodp": 37.0, "proj_litt": 0.0, "proj_geodp": 0.0, "gratuit_litt": 0.0, "gratuit_geodp": 0.0, "interne": 172.25, "prod_total": 662.58, "sup_total": 76.75, "rew_total": 151.08, "heures_saisies": 0.0, "capacite_attendue": 0.0, "capacite_totale": 0.0}, "commandes": {"global": 152204.0, "litt": 27252.0, "geodp": 48850.0, "nb": 26}, "backlog": {"total": 443000.0, "bloque": 109000.0, "mobilisable": 334000.0, "nb_projets": 151, "nb_rework": 117}}, "Février": {"ca": {"global": 101509.39, "litt": 69032.08, "geodp": 32477.31, "obj_global": 107440.0, "obj_litt": 64620.0, "obj_geodp": 42820.0, "py_global": 0.0, "py_litt": 0.0, "py_geodp": 0.0}, "charge": {"prod_litt": 417.08, "prod_geodp": 166.5, "sup_litt": 80.4, "sup_geodp": 2.0, "rew_litt": 100.17, "rew_geodp": 25.75, "proj_litt": 0.0, "proj_geodp": 0.0, "gratuit_litt": 0.0, "gratuit_geodp": 0.0, "interne": 190.25, "prod_total": 583.58, "sup_total": 91.9, "rew_total": 125.92, "heures_saisies": 0.0, "capacite_attendue": 0.0, "capacite_totale": 0.0}, "commandes": {"global": 56033.0, "litt": 9090.5, "geodp": 46942.5, "nb": 36}, "backlog": {"total": 382854.846, "bloque": 116592.773, "mobilisable": 266262.073, "nb_projets": 174, "nb_rework": 105}}, "Mars": {"ca": {"global": 96018.39, "litt": 44313.64, "geodp": 51704.75, "obj_global": 104660.0, "obj_litt": 70950.0, "obj_geodp": 33710.0, "py_global": 0.0, "py_litt": 0.0, "py_geodp": 0.0}, "charge": {"prod_litt": 483.42, "prod_geodp": 207.0, "sup_litt": 96.0, "sup_geodp": 13.5, "rew_litt": 137.5, "rew_geodp": 16.25, "proj_litt": 0.0, "proj_geodp": 0.0, "gratuit_litt": 0.0, "gratuit_geodp": 0.0, "interne": 208.42, "prod_total": 690.42, "sup_total": 129.5, "rew_total": 153.75, "heures_saisies": 0.0, "capacite_attendue": 0.0, "capacite_totale": 0.0}, "commandes": {"global": 99299.05, "litt": 24322.45, "geodp": 74976.6, "nb": 39}, "backlog": {"total": 391204.508, "bloque": 126224.655, "mobilisable": 264979.853, "nb_projets": 187, "nb_rework": 84}}, "Avril": {"ca": {"global": 61719.0, "litt": 26399.0, "geodp": 35320.0, "obj_global": 104280.0, "obj_litt": 68750.0, "obj_geodp": 35530.0, "py_global": 0.0, "py_litt": 0.0, "py_geodp": 0.0}, "charge": {"prod_litt": 388.42, "prod_geodp": 179.5, "sup_litt": 76.75, "sup_geodp": 8.0, "rew_litt": 69.75, "rew_geodp": 19.0, "proj_litt": 0.0, "proj_geodp": 0.0, "gratuit_litt": 0.0, "gratuit_geodp": 0.0, "interne": 223.25, "prod_total": 567.92, "sup_total": 84.75, "rew_total": 88.75, "heures_saisies": 0.0, "capacite_attendue": 0.0, "capacite_totale": 0.0}, "commandes": {"global": 50973.0, "litt": 17338.0, "geodp": 33635.0, "nb": 29}, "backlog": {"total": 376234.886, "bloque": 157947.556, "mobilisable": 218287.33, "nb_projets": 186, "nb_rework": 67}}, "Mai": {"ca": {"global": 71773.36, "litt": 41388.74, "geodp": 30384.62, "obj_global": 91630.0, "obj_litt": 52460.0, "obj_geodp": 39170.0, "py_global": 0.0, "py_litt": 0.0, "py_geodp": 0.0}, "charge": {"prod_litt": 248.5, "prod_geodp": 98.5, "sup_litt": 49.0, "sup_geodp": 0.5, "rew_litt": 21.75, "rew_geodp": 12.25, "proj_litt": 0.0, "proj_geodp": 0.0, "gratuit_litt": 0.0, "gratuit_geodp": 0.0, "interne": 145.33, "prod_total": 347.5, "sup_total": 49.5, "rew_total": 34.0, "heures_saisies": 0.0, "capacite_attendue": 0.0, "capacite_totale": 0.0}, "commandes": {"global": 59433.5, "litt": 14503.5, "geodp": 44930.0, "nb": 23}, "backlog": {"total": 360955.231, "bloque": 176136.006, "mobilisable": 184819.225, "nb_projets": 185, "nb_rework": 58}}, "Juin": {"ca": {"global": 44841.85, "litt": 14099.12, "geodp": 30742.73, "obj_global": 90000.0, "obj_litt": 42000.0, "obj_geodp": 48000.0, "py_global": 0.0, "py_litt": 0.0, "py_geodp": 0.0}, "charge": {"prod_litt": 262.5, "prod_geodp": 110.5, "sup_litt": 76.0, "sup_geodp": 13.5, "rew_litt": 42.0, "rew_geodp": 12.5, "proj_litt": 212.5, "proj_geodp": 97.0, "gratuit_litt": 8.0, "gratuit_geodp": 1.0, "interne": 121.75, "prod_total": 373.0, "sup_total": 89.5, "rew_total": 54.5, "heures_saisies": 589.75, "capacite_attendue": 754.87, "capacite_totale": 1021.3}, "commandes": {"global": 68569.5, "litt": 33194.5, "geodp": 35375.0, "nb": 26}, "backlog": {"total": 377120.881, "bloque": 208733.656, "mobilisable": 168387.225, "nb_projets": 252, "nb_rework": 54}, "clotures": {"projets": 12, "rework": 4}}}};
+const DATA = {"2026": {"Janvier": {"ca": {"global": 71232.501, "litt": 29671.556, "geodp": 41560.945, "obj_global": 140830.0, "obj_litt": 86170.0, "obj_geodp": 54660.0, "py_global": 0.0, "py_litt": 0.0, "py_geodp": 0.0}, "charge": {"prod_litt": 196.0, "prod_geodp": 155.0, "sup_litt": 69.75, "sup_geodp": 0.0, "rew_litt": 45.0, "rew_geodp": 37.0, "proj_litt": 0.0, "proj_geodp": 0.0, "gratuit_litt": 0.0, "gratuit_geodp": 0.0, "interne": 172.25, "prod_total": 662.58, "sup_total": 76.75, "rew_total": 151.08, "heures_saisies": 911.58, "capacite_attendue": 0.0, "capacite_totale": 0.0}, "commandes": {"global": 152204.0, "litt": 27252.0, "geodp": 48850.0, "nb": 26}, "backlog": {"total": 443000.0, "bloque": 109000.0, "mobilisable": 334000.0, "nb_projets": 151, "nb_rework": 117}, "clotures": {"projets": 34, "rework": 26}}, "Février": {"ca": {"global": 101509.39, "litt": 69032.08, "geodp": 32477.31, "obj_global": 107440.0, "obj_litt": 64620.0, "obj_geodp": 42820.0, "py_global": 0.0, "py_litt": 0.0, "py_geodp": 0.0}, "charge": {"prod_litt": 417.08, "prod_geodp": 166.5, "sup_litt": 80.4, "sup_geodp": 2.0, "rew_litt": 100.17, "rew_geodp": 25.75, "proj_litt": 0.0, "proj_geodp": 0.0, "gratuit_litt": 0.0, "gratuit_geodp": 0.0, "interne": 190.25, "prod_total": 583.58, "sup_total": 91.9, "rew_total": 125.92, "heures_saisies": 865.73, "capacite_attendue": 0.0, "capacite_totale": 0.0}, "commandes": {"global": 56033.0, "litt": 9090.5, "geodp": 46942.5, "nb": 36}, "backlog": {"total": 382854.846, "bloque": 116592.773, "mobilisable": 266262.073, "nb_projets": 174, "nb_rework": 105}, "clotures": {"projets": 28, "rework": 11}, "anciennete": {"litt": {"tranches": {"M+0": 6541.92, "M+1": 11035.359999999999, "M+2": 3476.7200000000003, "M+3": 20059.339999999997, "M+4→6": 12915.53, "M+7→12": 8136.210000000001, "M+13+": 6867.0}, "nb": {"M+0": 9, "M+1": 9, "M+2": 4, "M+3": 13, "M+4→6": 10, "M+7→12": 11, "M+13+": 3}, "total": 69032.08, "pct_vieux": 21.7}, "geodp": {"tranches": {"M+0": 4366.25, "M+1": 11535.5, "M+2": 6865.91, "M+3": 8333.9, "M+4→6": 0.0, "M+7→12": 1375.75, "M+13+": 0.0}, "nb": {"M+0": 6, "M+1": 11, "M+2": 9, "M+3": 4, "M+4→6": 0, "M+7→12": 1, "M+13+": 0}, "total": 32477.309999999998, "pct_vieux": 4.2}, "total": 101509.39, "ordre": ["M+0", "M+1", "M+2", "M+3", "M+4→6", "M+7→12", "M+13+"]}}, "Mars": {"ca": {"global": 96018.39, "litt": 44313.64, "geodp": 51704.75, "obj_global": 104660.0, "obj_litt": 70950.0, "obj_geodp": 33710.0, "py_global": 0.0, "py_litt": 0.0, "py_geodp": 0.0}, "charge": {"prod_litt": 483.42, "prod_geodp": 207.0, "sup_litt": 96.0, "sup_geodp": 13.5, "rew_litt": 137.5, "rew_geodp": 16.25, "proj_litt": 0.0, "proj_geodp": 0.0, "gratuit_litt": 0.0, "gratuit_geodp": 0.0, "interne": 208.42, "prod_total": 690.42, "sup_total": 129.5, "rew_total": 153.75, "heures_saisies": 1028.34, "capacite_attendue": 0.0, "capacite_totale": 0.0}, "commandes": {"global": 99299.05, "litt": 24322.45, "geodp": 74976.6, "nb": 39}, "backlog": {"total": 391204.508, "bloque": 126224.655, "mobilisable": 264979.853, "nb_projets": 187, "nb_rework": 84}, "clotures": {"projets": 47, "rework": 19}, "anciennete": {"litt": {"tranches": {"M+0": 1359.0, "M+1": 5927.7699999999995, "M+2": 6521.34, "M+3": 2539.2, "M+4→6": 17693.97, "M+7→12": 10989.960000000001, "M+13+": 500.0}, "nb": {"M+0": 1, "M+1": 6, "M+2": 6, "M+3": 2, "M+4→6": 13, "M+7→12": 9, "M+13+": 1}, "total": 45531.240000000005, "pct_vieux": 25.2}, "geodp": {"tranches": {"M+0": 11771.55, "M+1": 24230.200000000004, "M+2": 12292.4, "M+3": 2654.1, "M+4→6": 756.5, "M+7→12": 0.0, "M+13+": 0.0}, "nb": {"M+0": 11, "M+1": 13, "M+2": 8, "M+3": 5, "M+4→6": 2, "M+7→12": 0, "M+13+": 0}, "total": 51704.75, "pct_vieux": 0.0}, "total": 97235.99, "ordre": ["M+0", "M+1", "M+2", "M+3", "M+4→6", "M+7→12", "M+13+"]}}, "Avril": {"ca": {"global": 61719.0, "litt": 26399.0, "geodp": 35320.0, "obj_global": 104280.0, "obj_litt": 68750.0, "obj_geodp": 35530.0, "py_global": 0.0, "py_litt": 0.0, "py_geodp": 0.0}, "charge": {"prod_litt": 388.42, "prod_geodp": 179.5, "sup_litt": 76.75, "sup_geodp": 8.0, "rew_litt": 69.75, "rew_geodp": 19.0, "proj_litt": 0.0, "proj_geodp": 0.0, "gratuit_litt": 0.0, "gratuit_geodp": 0.0, "interne": 223.25, "prod_total": 567.92, "sup_total": 84.75, "rew_total": 88.75, "heures_saisies": 875.92, "capacite_attendue": 0.0, "capacite_totale": 0.0}, "commandes": {"global": 50973.0, "litt": 17338.0, "geodp": 33635.0, "nb": 29}, "backlog": {"total": 376234.886, "bloque": 157947.556, "mobilisable": 218287.33, "nb_projets": 186, "nb_rework": 67}, "clotures": {"projets": 48, "rework": 17}, "anciennete": {"litt": {"tranches": {"M+0": 284.2, "M+1": 1291.0, "M+2": 3005.17, "M+3": 869.24, "M+4→6": 5223.82, "M+7→12": 13588.67, "M+13+": 1605.0}, "nb": {"M+0": 1, "M+1": 4, "M+2": 2, "M+3": 2, "M+4→6": 8, "M+7→12": 11, "M+13+": 1}, "total": 25867.1, "pct_vieux": 58.7}, "geodp": {"tranches": {"M+0": 3147.5, "M+1": 7675.22, "M+2": 11488.050000000001, "M+3": 4377.1, "M+4→6": 1830.85, "M+7→12": 450.0, "M+13+": 0.0}, "nb": {"M+0": 8, "M+1": 11, "M+2": 10, "M+3": 8, "M+4→6": 6, "M+7→12": 1, "M+13+": 0}, "total": 28968.72, "pct_vieux": 1.6}, "total": 54835.82, "ordre": ["M+0", "M+1", "M+2", "M+3", "M+4→6", "M+7→12", "M+13+"]}}, "Mai": {"ca": {"global": 71773.36, "litt": 41388.74, "geodp": 30384.62, "obj_global": 91630.0, "obj_litt": 52460.0, "obj_geodp": 39170.0, "py_global": 0.0, "py_litt": 0.0, "py_geodp": 0.0}, "charge": {"prod_litt": 248.5, "prod_geodp": 98.5, "sup_litt": 49.0, "sup_geodp": 0.5, "rew_litt": 21.75, "rew_geodp": 12.25, "proj_litt": 0.0, "proj_geodp": 0.0, "gratuit_litt": 0.0, "gratuit_geodp": 0.0, "interne": 145.33, "prod_total": 347.5, "sup_total": 49.5, "rew_total": 34.0, "heures_saisies": 542.33, "capacite_attendue": 0.0, "capacite_totale": 0.0}, "commandes": {"global": 59433.5, "litt": 14503.5, "geodp": 44930.0, "nb": 23}, "backlog": {"total": 360955.231, "bloque": 176136.006, "mobilisable": 184819.225, "nb_projets": 185, "nb_rework": 58}, "clotures": {"projets": 33, "rework": 7}, "anciennete": {"litt": {"tranches": {"M+0": 3691.75, "M+1": 4491.24, "M+2": 5177.62, "M+3": 3159.42, "M+4→6": 6794.27, "M+7→12": 15865.44, "M+13+": 3019.0}, "nb": {"M+0": 6, "M+1": 6, "M+2": 5, "M+3": 6, "M+4→6": 15, "M+7→12": 6, "M+13+": 4}, "total": 42198.74, "pct_vieux": 44.8}, "geodp": {"tranches": {"M+0": 500.0, "M+1": 6791.0, "M+2": 12336.720000000001, "M+3": 3721.5, "M+4→6": 5929.4, "M+7→12": 1106.0, "M+13+": 0.0}, "nb": {"M+0": 2, "M+1": 8, "M+2": 9, "M+3": 6, "M+4→6": 8, "M+7→12": 2, "M+13+": 0}, "total": 30384.620000000003, "pct_vieux": 3.6}, "total": 72583.36, "ordre": ["M+0", "M+1", "M+2", "M+3", "M+4→6", "M+7→12", "M+13+"]}}, "Juin": {"ca": {"global": 35066.73, "litt": 9868.1, "geodp": 25198.63, "obj_global": 120460.0, "obj_litt": 63980.0, "obj_geodp": 56480.0, "py_global": 0.0, "py_litt": 0.0, "py_geodp": 0.0}, "charge": {"prod_litt": 140.75, "prod_geodp": 60.25, "sup_litt": 34.5, "sup_geodp": 5.5, "rew_litt": 21.0, "rew_geodp": 11.5, "proj_litt": 75.0, "proj_geodp": 60.0, "gratuit_litt": 25.0, "gratuit_geodp": 17.0, "interne": 68.25, "prod_total": 202.75, "sup_total": 40.0, "rew_total": 32.5, "heures_saisies": 245.5, "capacite_attendue": 260.0, "capacite_totale": 857.0}, "commandes": {"global": 32010.0, "litt": 12955.0, "geodp": 19055.0, "nb": 19}, "backlog": {"total": 359569.501, "bloque": 162540.646, "mobilisable": 197028.855, "nb_projets": 191, "nb_rework": 56}, "clotures": {"projets": 14, "rework": 3}, "anciennete": {"litt": {"tranches": {"M+0": 1492.25, "M+1": 257.1, "M+2": 300.0, "M+3": 882.5, "M+4→6": 1514.8, "M+7→12": 3121.2, "M+13+": 2300.25}, "nb": {"M+0": 2, "M+1": 2, "M+2": 2, "M+3": 1, "M+4→6": 6, "M+7→12": 1, "M+13+": 4}, "total": 9868.1, "pct_vieux": 54.9}, "geodp": {"tranches": {"M+0": 1472.0, "M+1": 5106.5, "M+2": 7975.0, "M+3": 7850.35, "M+4→6": 1057.9, "M+7→12": 0.0, "M+13+": 2170.88}, "nb": {"M+0": 3, "M+1": 9, "M+2": 5, "M+3": 5, "M+4→6": 5, "M+7→12": 0, "M+13+": 2}, "total": 25632.63, "pct_vieux": 8.5}, "total": 35500.73, "ordre": ["M+0", "M+1", "M+2", "M+3", "M+4→6", "M+7→12", "M+13+"]}}}};
 const MOIS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 const DEF_ANNEE = "2026";
 const DEF_MOIS = "Juin";
@@ -229,6 +247,33 @@ function donutCard(title, cls, segments) {
     <div class="card-title ${cls}">${title}</div>
     <div class="donut-wrap">${donut(segments)}${legend(segments)}</div>
   </div>`;
+}
+
+/* ── Barres empilées horizontales (comparaison de solutions) ── */
+function stackedBars(rows, segLabels, maxVal) {
+  // rows : [{name, values:[v1,v2,v3]}], segLabels : [{label,color}]
+  const max = maxVal || Math.max(...rows.map(r => r.values.reduce((a,b)=>a+b,0)), 1);
+  let bars = '';
+  for (const row of rows) {
+    const total = row.values.reduce((a,b)=>a+b,0);
+    let segs = '';
+    row.values.forEach((v, i) => {
+      if (v <= 0) return;
+      const w = v / max * 100;
+      segs += `<div class="stack-seg" style="width:${w}%;background:${segLabels[i].color}"
+        title="${segLabels[i].label}: ${Math.round(v)}h">${w > 8 ? Math.round(v)+'h' : ''}</div>`;
+    });
+    bars += `<div class="stack-row">
+      <span class="stack-name">${row.name}</span>
+      <div class="stack-track">${segs}</div>
+      <span class="stack-total">${Math.round(total)}h</span>
+    </div>`;
+  }
+  // légende
+  const leg = segLabels.map(s =>
+    `<span class="stack-leg-item"><span class="sw" style="background:${s.color}"></span>${s.label}</span>`
+  ).join('');
+  return `<div class="stack-wrap">${bars}<div class="stack-legend">${leg}</div></div>`;
 }
 
 /* ── CA : carte avec objectif ── */
@@ -289,6 +334,55 @@ function render() {
       ${vsCard("GEODP", ca.geodp, cm.geodp)}
     </div></div>`;
 
+  /* ═══ Ancienneté du CA déclaré (par solution) ═══ */
+  const anc = d.anciennete;
+  if (anc && anc.total > 0) {
+    const ancColors = {
+      'M+0':'#2E7D52','M+1':'#5B9F4E','M+2':'#9CB544','M+3':'#D4A93C',
+      'M+4→6':'#D98A2B','M+7→12':'#C25A1E','M+13+':'#993C1D'
+    };
+    // une barre par solution, échelle commune = max des deux totaux
+    const maxTotal = Math.max(anc.litt.total, anc.geodp.total, 1);
+    function ancBar(name, sol) {
+      if (sol.total <= 0) return `<div class="stack-row">
+        <span class="stack-name">${name}</span>
+        <div class="stack-track"></div><span class="stack-total">0 €</span></div>`;
+      const segs = anc.ordre.filter(b => sol.tranches[b] > 0).map(b => {
+        const v = sol.tranches[b];
+        const nb = sol.nb[b];
+        const pctTranche = Math.round(v / sol.total * 100);
+        const w = v / maxTotal * 100;
+        const tip = `${b}\n${nb} BDC\n${pctTranche}% de la tranche\n${Math.round(v).toLocaleString('fr-FR')} €`;
+        return `<div class="stack-seg" style="width:${w}%;background:${ancColors[b]}"
+          title="${tip}">${w>7?b:''}</div>`;
+      }).join('');
+      return `<div class="stack-row">
+        <span class="stack-name">${name}</span>
+        <div class="stack-track">${segs}</div>
+        <span class="stack-total">${Math.round(sol.total/1000)}k€</span>
+      </div>`;
+    }
+    const leg = anc.ordre.map(b =>
+      `<span class="stack-leg-item"><span class="sw" style="background:${ancColors[b]}"></span>${b}</span>`
+    ).join('');
+    html += `<div class="section"><div class="section-head">
+      <h2>Ancienneté du CA déclaré</h2>
+      <span class="note">âge de la commande · Littéralis vs GEODP</span></div>
+      <div class="card">
+        <div class="stack-wrap">
+          ${ancBar('Littéralis', anc.litt)}
+          ${ancBar('GEODP', anc.geodp)}
+          <div class="stack-legend">${leg}</div>
+        </div>
+        <div style="display:flex;gap:24px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+          <div><span class="label">Litt · CA > 6 mois</span>
+            <div style="font-weight:700;color:${anc.litt.pct_vieux>30?'var(--bad)':(anc.litt.pct_vieux>15?'var(--amber)':'var(--good)')}">${anc.litt.pct_vieux}%</div></div>
+          <div><span class="label">GEODP · CA > 6 mois</span>
+            <div style="font-weight:700;color:${anc.geodp.pct_vieux>30?'var(--bad)':(anc.geodp.pct_vieux>15?'var(--amber)':'var(--good)')}">${anc.geodp.pct_vieux}%</div></div>
+        </div>
+      </div></div>`;
+  }
+
   /* ═══ Charge : répartition ═══ */
   const prodG = (ch.prod_litt||0)+(ch.prod_geodp||0);
   const supG  = (ch.sup_litt||0)+(ch.sup_geodp||0);
@@ -306,6 +400,68 @@ function render() {
     {label:'Productif', v:ch.prod_geodp, c:'var(--prod)'},
     {label:'Support',   v:ch.sup_geodp,  c:'var(--support)'},
   ];
+  /* ═══ Charge du mois / à date (placée AVANT la répartition) ═══ */
+  const hs = ch.heures_saisies || 0;
+  const ca_att = ch.capacite_attendue || 0;
+  const ca_tot = ch.capacite_totale || 0;
+  const moisEnCours = ca_att > 0;  // capacité attendue connue = mois courant
+  let chargeHTML = '';
+  if (moisEnCours) {
+    const pctCompletion = Math.round(hs / ca_att * 100);
+    const pctMois = ca_tot > 0 ? Math.round(hs / ca_tot * 100) : 0;
+    const complColor = (pctCompletion > 100 || pctCompletion < 70) ? 'var(--bad)' : 'var(--good)';
+    chargeHTML = `<div class="section"><div class="section-head">
+      <h2>Charge à date</h2>
+      <span class="note">heures saisies au dernier relevé</span></div>
+      <div class="grid grid-3">
+        <div class="card">
+          <div class="label">Heures saisies</div>
+          <div class="value">${Math.round(hs)} h</div>
+          <div class="sub">sur ${Math.round(ca_att)} h attendues à date</div>
+          <div class="bar"><i style="width:${Math.min(pctCompletion,100)}%;background:${complColor}"></i></div>
+          <div class="sub"><span class="pct" style="color:${complColor}">${pctCompletion}%</span> de complétion</div>
+        </div>
+        <div class="card">
+          <div class="label">Capacité totale du mois</div>
+          <div class="value">${Math.round(ca_tot)} h</div>
+          <div class="sub">disponible sur le mois entier</div>
+          <div class="bar"><i style="width:${Math.min(pctMois,100)}%;background:var(--litt)"></i></div>
+          <div class="sub">${pctMois}% de la capacité consommée</div>
+        </div>
+        <div class="card">
+          <div class="label">Capacité attendue à date</div>
+          <div class="value">${Math.round(ca_att)} h</div>
+          <div class="sub">au prorata des jours ouvrés écoulés</div>
+        </div>
+      </div></div>`;
+  } else {
+    const prodTot = ch.prod_total || 0;
+    const supTot  = ch.sup_total || 0;
+    const intTot  = ch.interne || 0;
+    chargeHTML = `<div class="section"><div class="section-head">
+      <h2>Charge du mois</h2>
+      <span class="note">total des heures saisies sur le mois</span></div>
+      <div class="grid grid-3">
+        <div class="card">
+          <div class="label">Total heures saisies</div>
+          <div class="value">${Math.round(hs)} h</div>
+          <div class="sub">productif + support + interne</div>
+        </div>
+        <div class="card">
+          <div class="label">Heures productives</div>
+          <div class="value">${Math.round(prodTot)} h</div>
+          <div class="sub">${hs>0?Math.round(prodTot/hs*100):0}% du total</div>
+        </div>
+        <div class="card">
+          <div class="label">Support + Interne</div>
+          <div class="value">${Math.round(supTot+intTot)} h</div>
+          <div class="sub">${Math.round(supTot)} h support · ${Math.round(intTot)} h interne</div>
+        </div>
+      </div></div>`;
+  }
+  html += chargeHTML;
+
+  /* ═══ Répartition des heures (donuts) ═══ */
   html += `<div class="section"><div class="section-head">
     <h2>Répartition des heures</h2>
     <span class="note">productif / support / interne</span></div>
@@ -315,69 +471,27 @@ function render() {
       ${donutCard("GEODP", "geodp", segGe)}
     </div></div>`;
 
-  /* ═══ Charge à date ═══ */
-  const hs = ch.heures_saisies || 0;
-  const ca_att = ch.capacite_attendue || 0;
-  const ca_tot = ch.capacite_totale || 0;
-  const pctCompletion = ca_att > 0 ? Math.round(hs / ca_att * 100) : 0;
-  const pctMois = ca_tot > 0 ? Math.round(hs / ca_tot * 100) : 0;
-  const complColor = (pctCompletion > 100 || pctCompletion < 70) ? 'var(--bad)' : 'var(--good)';
-  html += `<div class="section"><div class="section-head">
-    <h2>Charge à date</h2>
-    <span class="note">heures saisies au dernier relevé</span></div>
-    <div class="grid grid-3">
-      <div class="card">
-        <div class="label">Heures saisies</div>
-        <div class="value">${Math.round(hs)} h</div>
-        <div class="sub">sur ${Math.round(ca_att)} h attendues à date</div>
-        <div class="bar"><i style="width:${Math.min(pctCompletion,100)}%;background:${complColor}"></i></div>
-        <div class="sub"><span class="pct" style="color:${complColor}">${pctCompletion}%</span> de complétion</div>
-      </div>
-      <div class="card">
-        <div class="label">Capacité totale du mois</div>
-        <div class="value">${Math.round(ca_tot)} h</div>
-        <div class="sub">disponible sur le mois entier</div>
-        <div class="bar"><i style="width:${Math.min(pctMois,100)}%;background:var(--litt)"></i></div>
-        <div class="sub">${pctMois}% de la capacité consommée</div>
-      </div>
-      <div class="card">
-        <div class="label">Capacité attendue à date</div>
-        <div class="value">${Math.round(ca_att)} h</div>
-        <div class="sub">au prorata des jours ouvrés écoulés</div>
-      </div>
-    </div></div>`;
-
-  /* ═══ Détail productif (projet / gratuit / rework) ═══ */
-  /* Si le détail "gratuit" est dans l'historique, on l'affiche ;
+  /* ═══ Détail productif (projet / gratuit / rework) — barres empilées ═══ */
+  /* Si le détail "gratuit" est dans l'historique (valeurs > 0), on l'affiche ;
      sinon repli sur projet = productif - rework (anciens mois). */
-  const hasGratuit = (ch.proj_litt != null) || (ch.gratuit_litt != null);
+  const hasGratuit = ((ch.proj_litt||0)+(ch.proj_geodp||0)+(ch.gratuit_litt||0)+(ch.gratuit_geodp||0)) > 0;
   const projL = hasGratuit ? (ch.proj_litt||0)  : Math.max(0,(ch.prod_litt||0)-(ch.rew_litt||0));
   const projGe= hasGratuit ? (ch.proj_geodp||0) : Math.max(0,(ch.prod_geodp||0)-(ch.rew_geodp||0));
   const gratL = ch.gratuit_litt||0;
   const gratGe= ch.gratuit_geodp||0;
-  const dG = [
-    {label:'Projet (CA)', v:projL+projGe, c:'var(--litt)'},
-    {label:'Gratuit',     v:gratL+gratGe, c:'var(--geodp)'},
-    {label:'Rework',      v:(ch.rew_litt||0)+(ch.rew_geodp||0), c:'var(--bad)'},
+  const segLabels = [
+    {label:'Projet (CA)', color:'var(--litt)'},
+    {label:'Gratuit',     color:'var(--geodp)'},
+    {label:'Rework',      color:'var(--bad)'},
   ];
-  const dL = [
-    {label:'Projet (CA)', v:projL, c:'var(--litt)'},
-    {label:'Gratuit',     v:gratL, c:'var(--geodp)'},
-    {label:'Rework',      v:ch.rew_litt, c:'var(--bad)'},
-  ];
-  const dGe = [
-    {label:'Projet (CA)', v:projGe, c:'var(--litt)'},
-    {label:'Gratuit',     v:gratGe, c:'var(--geodp)'},
-    {label:'Rework',      v:ch.rew_geodp, c:'var(--bad)'},
+  const prodRows = [
+    {name:'Littéralis', values:[projL, gratL, ch.rew_litt||0]},
+    {name:'GEODP',      values:[projGe, gratGe, ch.rew_geodp||0]},
   ];
   html += `<div class="section"><div class="section-head">
     <h2>Détail du temps productif</h2>
-    <span class="note">projet avec CA · gratuit · rework</span></div>
-    <div class="grid grid-3">
-      ${donutCard("Global", "", dG)}
-      ${donutCard("Littéralis", "litt", dL)}
-      ${donutCard("GEODP", "geodp", dGe)}
-    </div></div>`;
+    <span class="note">projet avec CA · gratuit · rework — Littéralis vs GEODP</span></div>
+    <div class="card">${stackedBars(prodRows, segLabels)}</div></div>`;
 
   /* ═══ Clôtures ═══ */
   html += `<div class="section"><div class="section-head">

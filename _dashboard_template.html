@@ -156,6 +156,24 @@
 
   .empty { color: var(--muted); font-style: italic; font-size: 13px; }
 
+  /* Barres empilées */
+  .stack-wrap { padding: 4px 2px; }
+  .stack-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .stack-name { width: 90px; font-size: 13.5px; font-weight: 600; flex-shrink: 0; }
+  .stack-track {
+    flex: 1; height: 30px; display: flex; border-radius: 7px; overflow: hidden;
+    background: var(--bg); border: 1px solid var(--border);
+  }
+  .stack-seg {
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums;
+    min-width: 2px; transition: width .3s; white-space: nowrap; overflow: hidden;
+  }
+  .stack-total { width: 52px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; font-size: 13.5px; flex-shrink: 0; }
+  .stack-legend { display: flex; gap: 18px; margin-top: 6px; padding-left: 102px; flex-wrap: wrap; }
+  .stack-leg-item { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+  .stack-leg-item .sw { width: 11px; height: 11px; border-radius: 3px; }
+
   footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px; }
 
   @media print {
@@ -231,6 +249,33 @@ function donutCard(title, cls, segments) {
   </div>`;
 }
 
+/* ── Barres empilées horizontales (comparaison de solutions) ── */
+function stackedBars(rows, segLabels, maxVal) {
+  // rows : [{name, values:[v1,v2,v3]}], segLabels : [{label,color}]
+  const max = maxVal || Math.max(...rows.map(r => r.values.reduce((a,b)=>a+b,0)), 1);
+  let bars = '';
+  for (const row of rows) {
+    const total = row.values.reduce((a,b)=>a+b,0);
+    let segs = '';
+    row.values.forEach((v, i) => {
+      if (v <= 0) return;
+      const w = v / max * 100;
+      segs += `<div class="stack-seg" style="width:${w}%;background:${segLabels[i].color}"
+        title="${segLabels[i].label}: ${Math.round(v)}h">${w > 8 ? Math.round(v)+'h' : ''}</div>`;
+    });
+    bars += `<div class="stack-row">
+      <span class="stack-name">${row.name}</span>
+      <div class="stack-track">${segs}</div>
+      <span class="stack-total">${Math.round(total)}h</span>
+    </div>`;
+  }
+  // légende
+  const leg = segLabels.map(s =>
+    `<span class="stack-leg-item"><span class="sw" style="background:${s.color}"></span>${s.label}</span>`
+  ).join('');
+  return `<div class="stack-wrap">${bars}<div class="stack-legend">${leg}</div></div>`;
+}
+
 /* ── CA : carte avec objectif ── */
 function caCard(label, cls, real, obj) {
   const p = pct(real, obj);
@@ -289,6 +334,55 @@ function render() {
       ${vsCard("GEODP", ca.geodp, cm.geodp)}
     </div></div>`;
 
+  /* ═══ Ancienneté du CA déclaré (par solution) ═══ */
+  const anc = d.anciennete;
+  if (anc && anc.total > 0) {
+    const ancColors = {
+      'M+0':'#2E7D52','M+1':'#5B9F4E','M+2':'#9CB544','M+3':'#D4A93C',
+      'M+4→6':'#D98A2B','M+7→12':'#C25A1E','M+13+':'#993C1D'
+    };
+    // une barre par solution, échelle commune = max des deux totaux
+    const maxTotal = Math.max(anc.litt.total, anc.geodp.total, 1);
+    function ancBar(name, sol) {
+      if (sol.total <= 0) return `<div class="stack-row">
+        <span class="stack-name">${name}</span>
+        <div class="stack-track"></div><span class="stack-total">0 €</span></div>`;
+      const segs = anc.ordre.filter(b => sol.tranches[b] > 0).map(b => {
+        const v = sol.tranches[b];
+        const nb = sol.nb[b];
+        const pctTranche = Math.round(v / sol.total * 100);
+        const w = v / maxTotal * 100;
+        const tip = `${b}\n${nb} BDC\n${pctTranche}% de la tranche\n${Math.round(v).toLocaleString('fr-FR')} €`;
+        return `<div class="stack-seg" style="width:${w}%;background:${ancColors[b]}"
+          title="${tip}">${w>7?b:''}</div>`;
+      }).join('');
+      return `<div class="stack-row">
+        <span class="stack-name">${name}</span>
+        <div class="stack-track">${segs}</div>
+        <span class="stack-total">${Math.round(sol.total/1000)}k€</span>
+      </div>`;
+    }
+    const leg = anc.ordre.map(b =>
+      `<span class="stack-leg-item"><span class="sw" style="background:${ancColors[b]}"></span>${b}</span>`
+    ).join('');
+    html += `<div class="section"><div class="section-head">
+      <h2>Ancienneté du CA déclaré</h2>
+      <span class="note">âge de la commande · Littéralis vs GEODP</span></div>
+      <div class="card">
+        <div class="stack-wrap">
+          ${ancBar('Littéralis', anc.litt)}
+          ${ancBar('GEODP', anc.geodp)}
+          <div class="stack-legend">${leg}</div>
+        </div>
+        <div style="display:flex;gap:24px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+          <div><span class="label">Litt · CA > 6 mois</span>
+            <div style="font-weight:700;color:${anc.litt.pct_vieux>30?'var(--bad)':(anc.litt.pct_vieux>15?'var(--amber)':'var(--good)')}">${anc.litt.pct_vieux}%</div></div>
+          <div><span class="label">GEODP · CA > 6 mois</span>
+            <div style="font-weight:700;color:${anc.geodp.pct_vieux>30?'var(--bad)':(anc.geodp.pct_vieux>15?'var(--amber)':'var(--good)')}">${anc.geodp.pct_vieux}%</div></div>
+        </div>
+      </div></div>`;
+  }
+
   /* ═══ Charge : répartition ═══ */
   const prodG = (ch.prod_litt||0)+(ch.prod_geodp||0);
   const supG  = (ch.sup_litt||0)+(ch.sup_geodp||0);
@@ -306,6 +400,68 @@ function render() {
     {label:'Productif', v:ch.prod_geodp, c:'var(--prod)'},
     {label:'Support',   v:ch.sup_geodp,  c:'var(--support)'},
   ];
+  /* ═══ Charge du mois / à date (placée AVANT la répartition) ═══ */
+  const hs = ch.heures_saisies || 0;
+  const ca_att = ch.capacite_attendue || 0;
+  const ca_tot = ch.capacite_totale || 0;
+  const moisEnCours = ca_att > 0;  // capacité attendue connue = mois courant
+  let chargeHTML = '';
+  if (moisEnCours) {
+    const pctCompletion = Math.round(hs / ca_att * 100);
+    const pctMois = ca_tot > 0 ? Math.round(hs / ca_tot * 100) : 0;
+    const complColor = (pctCompletion > 100 || pctCompletion < 70) ? 'var(--bad)' : 'var(--good)';
+    chargeHTML = `<div class="section"><div class="section-head">
+      <h2>Charge à date</h2>
+      <span class="note">heures saisies au dernier relevé</span></div>
+      <div class="grid grid-3">
+        <div class="card">
+          <div class="label">Heures saisies</div>
+          <div class="value">${Math.round(hs)} h</div>
+          <div class="sub">sur ${Math.round(ca_att)} h attendues à date</div>
+          <div class="bar"><i style="width:${Math.min(pctCompletion,100)}%;background:${complColor}"></i></div>
+          <div class="sub"><span class="pct" style="color:${complColor}">${pctCompletion}%</span> de complétion</div>
+        </div>
+        <div class="card">
+          <div class="label">Capacité totale du mois</div>
+          <div class="value">${Math.round(ca_tot)} h</div>
+          <div class="sub">disponible sur le mois entier</div>
+          <div class="bar"><i style="width:${Math.min(pctMois,100)}%;background:var(--litt)"></i></div>
+          <div class="sub">${pctMois}% de la capacité consommée</div>
+        </div>
+        <div class="card">
+          <div class="label">Capacité attendue à date</div>
+          <div class="value">${Math.round(ca_att)} h</div>
+          <div class="sub">au prorata des jours ouvrés écoulés</div>
+        </div>
+      </div></div>`;
+  } else {
+    const prodTot = ch.prod_total || 0;
+    const supTot  = ch.sup_total || 0;
+    const intTot  = ch.interne || 0;
+    chargeHTML = `<div class="section"><div class="section-head">
+      <h2>Charge du mois</h2>
+      <span class="note">total des heures saisies sur le mois</span></div>
+      <div class="grid grid-3">
+        <div class="card">
+          <div class="label">Total heures saisies</div>
+          <div class="value">${Math.round(hs)} h</div>
+          <div class="sub">productif + support + interne</div>
+        </div>
+        <div class="card">
+          <div class="label">Heures productives</div>
+          <div class="value">${Math.round(prodTot)} h</div>
+          <div class="sub">${hs>0?Math.round(prodTot/hs*100):0}% du total</div>
+        </div>
+        <div class="card">
+          <div class="label">Support + Interne</div>
+          <div class="value">${Math.round(supTot+intTot)} h</div>
+          <div class="sub">${Math.round(supTot)} h support · ${Math.round(intTot)} h interne</div>
+        </div>
+      </div></div>`;
+  }
+  html += chargeHTML;
+
+  /* ═══ Répartition des heures (donuts) ═══ */
   html += `<div class="section"><div class="section-head">
     <h2>Répartition des heures</h2>
     <span class="note">productif / support / interne</span></div>
@@ -315,69 +471,27 @@ function render() {
       ${donutCard("GEODP", "geodp", segGe)}
     </div></div>`;
 
-  /* ═══ Charge à date ═══ */
-  const hs = ch.heures_saisies || 0;
-  const ca_att = ch.capacite_attendue || 0;
-  const ca_tot = ch.capacite_totale || 0;
-  const pctCompletion = ca_att > 0 ? Math.round(hs / ca_att * 100) : 0;
-  const pctMois = ca_tot > 0 ? Math.round(hs / ca_tot * 100) : 0;
-  const complColor = (pctCompletion > 100 || pctCompletion < 70) ? 'var(--bad)' : 'var(--good)';
-  html += `<div class="section"><div class="section-head">
-    <h2>Charge à date</h2>
-    <span class="note">heures saisies au dernier relevé</span></div>
-    <div class="grid grid-3">
-      <div class="card">
-        <div class="label">Heures saisies</div>
-        <div class="value">${Math.round(hs)} h</div>
-        <div class="sub">sur ${Math.round(ca_att)} h attendues à date</div>
-        <div class="bar"><i style="width:${Math.min(pctCompletion,100)}%;background:${complColor}"></i></div>
-        <div class="sub"><span class="pct" style="color:${complColor}">${pctCompletion}%</span> de complétion</div>
-      </div>
-      <div class="card">
-        <div class="label">Capacité totale du mois</div>
-        <div class="value">${Math.round(ca_tot)} h</div>
-        <div class="sub">disponible sur le mois entier</div>
-        <div class="bar"><i style="width:${Math.min(pctMois,100)}%;background:var(--litt)"></i></div>
-        <div class="sub">${pctMois}% de la capacité consommée</div>
-      </div>
-      <div class="card">
-        <div class="label">Capacité attendue à date</div>
-        <div class="value">${Math.round(ca_att)} h</div>
-        <div class="sub">au prorata des jours ouvrés écoulés</div>
-      </div>
-    </div></div>`;
-
-  /* ═══ Détail productif (projet / gratuit / rework) ═══ */
-  /* Si le détail "gratuit" est dans l'historique, on l'affiche ;
+  /* ═══ Détail productif (projet / gratuit / rework) — barres empilées ═══ */
+  /* Si le détail "gratuit" est dans l'historique (valeurs > 0), on l'affiche ;
      sinon repli sur projet = productif - rework (anciens mois). */
-  const hasGratuit = (ch.proj_litt != null) || (ch.gratuit_litt != null);
+  const hasGratuit = ((ch.proj_litt||0)+(ch.proj_geodp||0)+(ch.gratuit_litt||0)+(ch.gratuit_geodp||0)) > 0;
   const projL = hasGratuit ? (ch.proj_litt||0)  : Math.max(0,(ch.prod_litt||0)-(ch.rew_litt||0));
   const projGe= hasGratuit ? (ch.proj_geodp||0) : Math.max(0,(ch.prod_geodp||0)-(ch.rew_geodp||0));
   const gratL = ch.gratuit_litt||0;
   const gratGe= ch.gratuit_geodp||0;
-  const dG = [
-    {label:'Projet (CA)', v:projL+projGe, c:'var(--litt)'},
-    {label:'Gratuit',     v:gratL+gratGe, c:'var(--geodp)'},
-    {label:'Rework',      v:(ch.rew_litt||0)+(ch.rew_geodp||0), c:'var(--bad)'},
+  const segLabels = [
+    {label:'Projet (CA)', color:'var(--litt)'},
+    {label:'Gratuit',     color:'var(--geodp)'},
+    {label:'Rework',      color:'var(--bad)'},
   ];
-  const dL = [
-    {label:'Projet (CA)', v:projL, c:'var(--litt)'},
-    {label:'Gratuit',     v:gratL, c:'var(--geodp)'},
-    {label:'Rework',      v:ch.rew_litt, c:'var(--bad)'},
-  ];
-  const dGe = [
-    {label:'Projet (CA)', v:projGe, c:'var(--litt)'},
-    {label:'Gratuit',     v:gratGe, c:'var(--geodp)'},
-    {label:'Rework',      v:ch.rew_geodp, c:'var(--bad)'},
+  const prodRows = [
+    {name:'Littéralis', values:[projL, gratL, ch.rew_litt||0]},
+    {name:'GEODP',      values:[projGe, gratGe, ch.rew_geodp||0]},
   ];
   html += `<div class="section"><div class="section-head">
     <h2>Détail du temps productif</h2>
-    <span class="note">projet avec CA · gratuit · rework</span></div>
-    <div class="grid grid-3">
-      ${donutCard("Global", "", dG)}
-      ${donutCard("Littéralis", "litt", dL)}
-      ${donutCard("GEODP", "geodp", dGe)}
-    </div></div>`;
+    <span class="note">projet avec CA · gratuit · rework — Littéralis vs GEODP</span></div>
+    <div class="card">${stackedBars(prodRows, segLabels)}</div></div>`;
 
   /* ═══ Clôtures ═══ */
   html += `<div class="section"><div class="section-head">

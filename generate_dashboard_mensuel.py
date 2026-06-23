@@ -42,6 +42,7 @@ def build_data():
     df_cmd    = pd.read_excel(xls, "commandes") if "commandes" in xls.sheet_names else pd.DataFrame()
     df_bl     = pd.read_excel(xls, "backlog")   if "backlog" in xls.sheet_names else pd.DataFrame()
     df_clot   = pd.read_excel(xls, "clotures")  if "clotures" in xls.sheet_names else pd.DataFrame()
+    df_anc    = pd.read_excel(xls, "anciennete") if "anciennete" in xls.sheet_names else pd.DataFrame()
 
     data = {}
 
@@ -74,6 +75,14 @@ def build_data():
         pl, pg = _num(r.get("Productif Litt")), _num(r.get("Productif GEODP"))
         sl, sg = _num(r.get("Support Litt")), _num(r.get("Support GEODP"))
         rl, rg = _num(r.get("Rework Litt")), _num(r.get("Rework GEODP"))
+        prod_total = _num(r.get("Productif Total")) or (pl + pg)
+        sup_total  = _num(r.get("Support Total")) or (sl + sg)
+        interne    = _num(r.get("Interne"))
+        # Heures saisies : colonne dédiée si présente (mois courant),
+        # sinon total des heures du mois (mois clos) = prod + support + interne.
+        h_saisies = _num(r.get("Heures saisies à date"))
+        if h_saisies == 0:
+            h_saisies = prod_total + sup_total + interne
         slot(annee, mois)["charge"] = {
             "prod_litt": pl, "prod_geodp": pg,
             "sup_litt": sl, "sup_geodp": sg,
@@ -82,11 +91,11 @@ def build_data():
             "proj_geodp":   _num(r.get("Projet GEODP")),
             "gratuit_litt": _num(r.get("Gratuit Litt")),
             "gratuit_geodp":_num(r.get("Gratuit GEODP")),
-            "interne": _num(r.get("Interne")),
-            "prod_total": _num(r.get("Productif Total")) or (pl + pg),
-            "sup_total":  _num(r.get("Support Total")) or (sl + sg),
+            "interne": interne,
+            "prod_total": prod_total,
+            "sup_total":  sup_total,
             "rew_total":  _num(r.get("Rework Total")) or (rl + rg),
-            "heures_saisies":     _num(r.get("Heures saisies à date")),
+            "heures_saisies":     h_saisies,
             "capacite_attendue":  _num(r.get("Capacité attendue à date")),
             "capacite_totale":    _num(r.get("Capacité totale du mois")),
         }
@@ -127,6 +136,59 @@ def build_data():
             "projets": int(_num(r.get("Projets clôturés"))),
             "rework":  int(_num(r.get("dont Rework"))),
         }
+
+    # Ancienneté du CA : répartition du CA du mois par tranche d'âge, PAR SOLUTION
+    def _bucket(anc):
+        if anc <= 0:  return "M+0"
+        if anc == 1:  return "M+1"
+        if anc == 2:  return "M+2"
+        if anc == 3:  return "M+3"
+        if anc <= 6:  return "M+4→6"
+        if anc <= 12: return "M+7→12"
+        return "M+13+"
+    BUCKETS = ["M+0", "M+1", "M+2", "M+3", "M+4→6", "M+7→12", "M+13+"]
+
+    def _norm_sol(s):
+        s = str(s).lower()
+        if "geodp" in s: return "GEODP"
+        if "litt" in s or "liess" in s or "sherpa" in s: return "LITTERALIS"
+        return "Autre"
+
+    if not df_anc.empty:
+        for (annee, mois), grp in df_anc.groupby(["Année", "Mois"]):
+            if pd.isna(mois) or pd.isna(annee):
+                continue
+            # tranches par solution : CA + nombre de BDC
+            par_sol = {"LITTERALIS": {b: 0.0 for b in BUCKETS},
+                       "GEODP":      {b: 0.0 for b in BUCKETS}}
+            nb_sol  = {"LITTERALIS": {b: 0 for b in BUCKETS},
+                       "GEODP":      {b: 0 for b in BUCKETS}}
+            for _, r in grp.iterrows():
+                ca = _num(r.get("CA"))
+                if ca <= 0:
+                    continue
+                sol = _norm_sol(r.get("Solution"))
+                if sol not in par_sol:
+                    continue
+                b = _bucket(int(_num(r.get("Ancienneté"))))
+                par_sol[sol][b] += ca
+                nb_sol[sol][b]  += 1
+
+            def _pct_vieux(tr):
+                t = sum(tr.values())
+                return round((tr["M+7→12"] + tr["M+13+"]) / t * 100, 1) if t > 0 else 0
+
+            total_global = sum(sum(par_sol[s].values()) for s in par_sol)
+            slot(annee, mois)["anciennete"] = {
+                "litt":  {"tranches": par_sol["LITTERALIS"], "nb": nb_sol["LITTERALIS"],
+                          "total": sum(par_sol["LITTERALIS"].values()),
+                          "pct_vieux": _pct_vieux(par_sol["LITTERALIS"])},
+                "geodp": {"tranches": par_sol["GEODP"], "nb": nb_sol["GEODP"],
+                          "total": sum(par_sol["GEODP"].values()),
+                          "pct_vieux": _pct_vieux(par_sol["GEODP"])},
+                "total": total_global,
+                "ordre": BUCKETS,
+            }
 
     return data
 
