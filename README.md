@@ -1,6 +1,6 @@
 # Pilotage de production — PS France
 
-Pipeline automatisé **Jira + Tempo → Excel → Historique → Dashboard HTML** pour le suivi mensuel de la production (CA, charge, backlog, clôtures) des solutions Littéralis et GEODP.
+Pipeline automatisé **Jira + Tempo → Excel → Historique → Dashboard HTML** pour le suivi mensuel de la production (CA, charge, backlog, clôtures, prévisionnel) des solutions Littéralis et GEODP.
 
 Dépôt : `MathildePanierDelivery/jira-export` · Publication : GitHub Pages
 
@@ -12,10 +12,14 @@ Dépôt : `MathildePanierDelivery/jira-export` · Publication : GitHub Pages
 collect_jira_worklogs.py   →  jira_cache.pkl              (cache, NON publié)
         │   Jira API (issues + clôtures) · Tempo API (worklogs)
         ▼
+controle_coherence_ca.py   →  rapport d'alertes           (résumé du run GitHub)
+        │
 export_mensuel.py          →  jira_export_AAAA-MM-JJ.xlsx (8 onglets)
         │                  →  _historique.xlsx            (accumulation du mois)
         ▼
-generate_dashboard_mensuel.py  →  dashboard_mensuel.html (lit _historique.xlsx)
+generate_dashboard_mensuel.py  →  dashboard_mensuel.html  (lit _historique.xlsx)
+
+generate_previsionnel.py   →  previsionnel_2026.xlsx      (snapshot 1er du mois)
 ```
 
 ---
@@ -24,14 +28,17 @@ generate_dashboard_mensuel.py  →  dashboard_mensuel.html (lit _historique.xlsx
 
 | Script | Rôle | Sorties |
 |--------|------|---------|
-| `collect_jira_worklogs.py` | Collecte Jira + Tempo en un seul passage | `jira_cache.pkl` |
-| `export_mensuel.py` | Génère l'export Excel **et** accumule le mois dans l'historique | `jira_export_*.xlsx` |
-| `maj_historique.py` | Module appelé par l'export : écrit la ligne du mois dans `_historique.xlsx` | — |
-| `generate_dashboard_mensuel.py` | Génère le dashboard web depuis l'historique | `dashboard_mensuel.html` |
+| `collect_jira_worklogs.py` | Collecte Jira + Tempo en un passage (`--mois courant\|precedent`) | `jira_cache.pkl` |
+| `controle_coherence_ca.py` | Détecte les incohérences CA (bugs Jira) → résumé du run | rapport |
+| `export_mensuel.py` | Export Excel 8 onglets **et** accumulation historique | `jira_export_*.xlsx` |
+| `maj_historique.py` | Module appelé par l'export : écrit la ligne du mois | — |
+| `generate_dashboard_mensuel.py` | Dashboard web depuis l'historique | `dashboard_mensuel.html` |
+| `generate_previsionnel.py` | Prévisionnel pondéré du mois (par CP, par solution) | `previsionnel_2026.xlsx` |
+| `orchestration.py` | Détermine les actions selon la date (1er du mois ?) | flags workflow |
 
 ### Pourquoi un collecteur séparé ?
 
-Les worklogs sont saisis via **Tempo**, pas l'API Jira native (qui renvoie un compte technique au lieu du vrai auteur). Le collecteur interroge l'API Tempo (`api.eu.tempo.io`), filtre sur l'équipe (8 collaborateurs via `accountId`) et joint à Jira pour les métadonnées. Une seule collecte alimente tout.
+Les worklogs sont saisis via **Tempo**, pas l'API Jira native (qui renvoie un compte technique au lieu du vrai auteur). Le collecteur interroge l'API Tempo (`api.eu.tempo.io`), filtre sur l'équipe (8 collaborateurs via `accountId`) et joint à Jira. Une seule collecte alimente tout.
 
 ---
 
@@ -40,72 +47,90 @@ Les worklogs sont saisis via **Tempo**, pas l'API Jira native (qui renvoie un co
 1. **Tableau de bord** — synthèse : CA vs objectif, charge à date, projets clôturés / ouverts
 2. **Suivi de production** — CA par épic (Hardware exclu)
 3. **Suivi Hardware** — tickets Matériel GEODP clôturés dans le mois
-4. **Capacité productive** — disponibilité de l'équipe (jours ouvrés − absences)
-5. **Charge** — heures par solution et par type, % occupation coloré
-6. **Backlog** — montant restant à reconnaître, mobilisable vs bloqué
+4. **Capacité productive** — totaux d'équipe (aucune donnée nominative)
+5. **Charge** — heures par solution et par type, % occupation
+6. **Backlog** — restant à reconnaître, mobilisable vs bloqué
 7. **Commandes du mois** — épics créées dans le mois
 8. **Projets clôturés** — épics terminées, rework mis en évidence
 
 ### Règles métier clés
 
-- **Solution** : normalisée par mot-clé (insensible casse/accents) → LITTERALIS / GEODP
-- **Épics PSC** (New delivery) : solution = LITTERALIS ; catégorie = Projet si ticket CA rattaché, sinon Commande sans prestation
-- **Temps par solution** : seul le productif compte (Projet, Rework, Maintenance, Prestation offerte, Commande sans prestation) ; Support et Interne à part
-- **Matériel GEODP** : ne consomme pas d'heures ; le temps se répartit sur les tickets services
-- **Clôtures** : détectées via le changelog Jira (`status changed TO "Terminé"`), car `resolutiondate` est souvent vide
-- **Objectifs** : onglet lu défini par `OBJECTIFS_ONGLET` dans `export_mensuel.py` (actuellement `LE1`)
+- **Solution** : normalisée par mot-clé insensible casse/accents → LITTERALIS / GEODP
+- **Épics PSC** : solution = LITTERALIS ; catégorie = Projet si ticket CA rattaché, sinon Commande sans prestation
+- **Temps par solution** : seul le productif compte ; Support et Interne à part
+- **Matériel GEODP** : ne consomme pas d'heures (réparties sur les services)
+- **Clôtures** : via changelog Jira (`status → "Terminé"`)
+- **Objectifs** : onglet lu défini par `OBJECTIFS_ONGLET` dans `export_mensuel.py` (`LE1`)
+- **Prévisionnel pondéré** : Prévision (cf 23610) × taux de confiance (cf 23595) —
+  Haute 0,85 · Moyenne 0,50 · Basse 0,15 · non renseigné 0
 
 ---
 
-## L'accumulation dans l'historique
+## Accumulation & snapshots dans l'historique
 
-À chaque exécution, `export_mensuel.py` écrit (ou écrase) la ligne du **mois courant** dans `_historique.xlsx`, sur 6 onglets : `ca`, `charge`, `backlog`, `commandes`, `ca_deal`, `anciennete`.
+À chaque run, `export_mensuel.py` écrit (ou écrase) la ligne du **mois courant** dans
+`_historique.xlsx` (onglets `ca`, `charge`, `backlog`, `commandes`, `ca_deal`, `anciennete`).
 
-- Le **CA N-1** est récupéré automatiquement depuis `ca_2025.xlsx`.
-- L'**ancienneté** ne retient que les épics avec du CA déclaré.
-- Le dashboard lit ensuite cet historique → sélecteur multi-mois.
+- **CA N-1** récupéré automatiquement depuis `ca_2025.xlsx`.
+- **Ancienneté** : seules les épics avec du CA déclaré.
+- **Backlog début de mois** : photo figée au 1er run du mois (colonnes `backlog_debut_mois_*`),
+  jamais écrasée → permet de suivre la tendance mensuelle.
 
 ---
 
-## Le dashboard HTML
+## Orchestration temporelle
 
-`generate_dashboard_mensuel.py` lit `_historique.xlsx` et produit `dashboard_mensuel.html` :
-fichier autonome, sélecteur mois / année, CA vs objectifs, CA vs commandes, répartition des heures (donuts), clôtures. Données embarquées en JSON (non sensibles).
+`orchestration.py` détecte le 1er jour du mois et pilote le workflow :
 
-`index.html` est la page d'accueil qui pointe vers le dashboard et les autres pages.
+| Quand | Actions |
+|-------|---------|
+| **Chaque jour** | collecte courant → contrôle CA → export → historique → dashboard |
+| **1er du mois (en plus)** | fige le mois précédent (mode `precedent`) + capture le prévisionnel |
+
+Le 1er du mois, l'historique reçoit **deux lignes** : le mois précédent figé, et le mois courant créé.
+
+---
+
+## Le contrôle de cohérence CA
+
+`controle_coherence_ca.py` repère deux bugs Jira fréquents :
+1. **Dépassement** : CA reconnu > montant commande
+2. **Écart d'avancement** : CA reconnu ≠ (% avancement × montant commande), tolérance 1€
+
+Rapport affiché dans le **résumé du run** (onglet Actions). N'échoue jamais le pipeline.
+Lançable aussi en local : `python controle_coherence_ca.py`.
 
 ---
 
 ## Fichiers de configuration
 
-| Fichier | Contenu | Mise à jour |
-|---------|---------|-------------|
-| `absences_2026.xlsx` | Congés / maladie, **un onglet par mois** | Manuelle (⚠️ sensible, voir plus bas) |
-| `objectifs.xlsx` | Objectifs CA (onglets Budget / LE1 / LE2) | Selon validation direction |
-| `ca_2025.xlsx` | CA réalisé 2025 (référence N-1) | Figé |
-| `_historique.xlsx` | Cumul mensuel (alimenté par le pipeline) | Automatique |
+| Fichier | Contenu | Publié ? |
+|---------|---------|----------|
+| `absences_2026.xlsx` | Congés / maladie, un onglet par mois | ❌ sensible (Secret) |
+| `objectifs.xlsx` | Objectifs CA (Budget / LE1 / LE2) | ✅ |
+| `ca_2025.xlsx` | CA réalisé 2025 (référence N-1) | ✅ |
+| `_historique.xlsx` | Cumul mensuel (alimenté par le pipeline) | ✅ |
+| `previsionnel_2026.xlsx` | Prévisionnel pondéré mensuel | ✅ (non sensible) |
 
 ---
 
 ## ⚠️ Données sensibles — à ne JAMAIS committer
 
-Deux fichiers contiennent des données personnelles, exclus par `.gitignore` :
-
 - **`absences_2026.xlsx`** — congés / maladie nominatifs (données de santé)
 - **`jira_cache.pkl`** — tous les worklogs de l'équipe
 
-Protection dans le workflow :
-- `absences_2026.xlsx` entre par le **Secret** `ABSENCES_B64` (base64), reconstitué le temps du run puis supprimé.
-- `jira_cache.pkl` est généré pendant le run puis supprimé avant tout commit.
-- Seuls les livrables **non sensibles** sont publiés (dashboards, historique agrégé).
+Protection : `.gitignore` + le fichier absences entre par le Secret `ABSENCES_B64`
+(reconstitué le temps du run puis supprimé) ; le cache est généré puis supprimé avant
+publication. L'export Excel publié ne contient **aucune** donnée RH nominative
+(onglet Capacité = totaux d'équipe uniquement).
 
 ---
 
 ## Déploiement GitHub Actions
 
-### Secrets à créer
+### Secrets requis
 
-*Settings → Secrets and variables → Actions → New repository secret*
+*Settings → Secrets and variables → Actions*
 
 | Secret | Valeur |
 |--------|--------|
@@ -115,25 +140,25 @@ Protection dans le workflow :
 | `TEMPO_TOKEN` | token Tempo |
 | `ABSENCES_B64` | `absences_2026.xlsx` encodé en base64 |
 
-### Encoder le fichier absences (PowerShell)
+### Encoder les absences (PowerShell)
 
 ```powershell
 [Convert]::ToBase64String([IO.File]::ReadAllBytes("absences_2026.xlsx")) | Set-Clipboard
 ```
 
-Coller le résultat dans le Secret `ABSENCES_B64`. **À refaire chaque mois** après mise à jour des absences. (Si tu es dans CMD, tape d'abord `powershell`.)
+Coller dans le Secret `ABSENCES_B64`. **À refaire chaque mois.** (Dans CMD, taper `powershell` d'abord.)
 
 ### Lancer
 
-- **Manuel** : *Actions* → *Pipeline mensuel* → *Run workflow* (choix `courant` / `precedent`)
-- **Automatique** : selon le `cron` dans `.github/workflows/pipeline_mensuel.yml`
+- **Manuel** : Actions → Pipeline mensuel → Run workflow
+- **Automatique** : cron quotidien 06:00 UTC (le 1er du mois déclenche les étapes spéciales)
 
 ---
 
 ## Lancer en local
 
 ```bash
-pip install jira requests pandas openpyxl holidays
+pip install -r requirements.txt
 
 # PowerShell
 $env:JIRA_URL = "https://sogelink.atlassian.net"
@@ -144,9 +169,8 @@ $env:TEMPO_TOKEN = "ton_token_tempo"
 python collect_jira_worklogs.py --mois courant --refresh
 python export_mensuel.py
 python generate_dashboard_mensuel.py
+python generate_previsionnel.py        # optionnel : prévisionnel du mois
 ```
-
-Le token Jira est lu via `JIRA_API_TOKEN` (GitHub) **ou** `JIRA_TOKEN` (local).
 
 ---
 
@@ -158,7 +182,7 @@ Bérénice Bossard · Marine Masingarbe · Duncan Hamelin · Maxime Pontonnier �
 
 ## Chantiers à venir
 
-- Contrôle de cohérence du CA (`Reconnaissance_CA`) avec alerte
-- Snapshots figés : backlog début de mois, prévisionnel (1er vendredi)
+- Comparaison prévu / réalisé (taux de report du prévisionnel)
+- Enrichissement du dashboard (détail productif/gratuit, heures à date, capacité dynamique)
 - Suivi continu des temps par projet (`Temps_Clockwork`)
-- Orchestration fine du workflow (quotidien + figement mensuel)
+- Le fichier de reconnaissance CA détaillé reste généré **en local** (non publié, sensible)
