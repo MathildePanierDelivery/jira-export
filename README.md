@@ -18,8 +18,9 @@ export_mensuel.py          →  jira_export_AAAA-MM-JJ.xlsx (8 onglets)
         │                  →  _historique.xlsx            (accumulation du mois)
         ▼
 generate_dashboard_mensuel.py  →  dashboard_mensuel.html  (lit _historique.xlsx)
+generate_objectifs.py      →  objectifs.html              (objectifs d'équipe)
 
-generate_previsionnel.py   →  previsionnel_2026.xlsx      (snapshot 1er du mois)
+generate_previsionnel.py   →  previsionnel_2026.xlsx      (snapshot 1er jour ouvré)
 ```
 
 ---
@@ -33,8 +34,9 @@ generate_previsionnel.py   →  previsionnel_2026.xlsx      (snapshot 1er du moi
 | `export_mensuel.py` | Export Excel 8 onglets **et** accumulation historique | `jira_export_*.xlsx` |
 | `maj_historique.py` | Module appelé par l'export : écrit la ligne du mois | — |
 | `generate_dashboard_mensuel.py` | Dashboard web depuis l'historique | `dashboard_mensuel.html` |
+| `generate_objectifs.py` | Dashboard de suivi des objectifs d'équipe | `objectifs.html` |
 | `generate_previsionnel.py` | Prévisionnel pondéré du mois (par CP, par solution) | `previsionnel_2026.xlsx` |
-| `orchestration.py` | Détermine les actions selon la date (1er du mois ?) | flags workflow |
+| `orchestration.py` | Détermine les actions selon la date (1er jour ouvré ?) | flags workflow |
 
 ### Pourquoi un collecteur séparé ?
 
@@ -84,14 +86,16 @@ Les worklogs sont saisis via **Tempo**, pas l'API Jira native (qui renvoie un co
 
 ## Orchestration temporelle
 
-`orchestration.py` détecte le 1er jour du mois et pilote le workflow :
+`orchestration.py` détecte le **premier jour ouvré** du mois et pilote le workflow :
 
 | Quand | Actions |
 |-------|---------|
-| **Chaque jour** | collecte courant → contrôle CA → export → historique → dashboard |
-| **1er du mois (en plus)** | fige le mois précédent (mode `precedent`) + capture le prévisionnel |
+| **Chaque jour** | collecte courant → contrôle CA → export → historique → dashboards |
+| **1er jour ouvré (en plus)** | fige le mois précédent (mode `precedent`) + capture le prévisionnel |
 
-Le 1er du mois, l'historique reçoit **deux lignes** : le mois précédent figé, et le mois courant créé.
+« 1er jour ouvré » = premier jour lun-ven non férié du mois (via `holidays.France`).
+Si le 1er tombe un week-end ou un férié, le déclenchement a lieu le 1er jour ouvré suivant.
+Le 1er jour ouvré, l'historique reçoit **deux lignes** : le mois précédent figé, et le mois courant créé.
 
 ---
 
@@ -106,12 +110,36 @@ Lançable aussi en local : `python controle_coherence_ca.py`.
 
 ---
 
+## Les dashboards HTML
+
+### Dashboard mensuel (`dashboard_mensuel.html`)
+
+`generate_dashboard_mensuel.py` lit `_historique.xlsx`, fichier autonome avec sélecteur mois / année. Sections :
+- **CA** : global / Littéralis / GEODP vs objectifs
+- **CA vs commandes reçues**
+- **Ancienneté du CA déclaré** : répartition du CA du mois par âge de la commande (7 tranches M+0 → M+13+), en barres empilées séparées Littéralis / GEODP (cycles différents) + % CA > 6 mois par solution ; survol = nb BDC, % tranche, montant
+- **Charge** : du mois (mois clos) ou à date (mois courant), avec capacité
+- **Répartition des heures** : productif / support / interne (donuts)
+- **Détail du temps productif** : projet avec CA / gratuit / rework, barres empilées Littéralis vs GEODP
+- **Clôtures du mois** : projets clôturés + dont rework
+
+Pour les mois passés, les données fines absentes (heures à date, gratuit isolé) sont repliées sur le total du mois.
+
+### Dashboard des objectifs (`objectifs.html`)
+
+`generate_objectifs.py` lit l'onglet `ObjectifsEquipe` de `objectifs.xlsx` (cibles révisables) et le réalisé cumulé de l'historique :
+- **CA non récurrent** : cumul annuel vs paliers de prime (déclencheur / palier 2 / target)
+- **Réduction rework** : cumul des clôtures rework depuis janvier vs paliers
+- **CSAT** : lien vers le fichier SharePoint de suivi
+
+Cibles modifiables dans `objectifs.xlsx` sans toucher au code.
+
 ## Fichiers de configuration
 
 | Fichier | Contenu | Publié ? |
 |---------|---------|----------|
 | `absences_2026.xlsx` | Congés / maladie, un onglet par mois | ❌ sensible (Secret) |
-| `objectifs.xlsx` | Objectifs CA (Budget / LE1 / LE2) | ✅ |
+| `objectifs.xlsx` | Objectifs CA (Budget / LE1 / LE2) + onglet ObjectifsEquipe (cibles équipe) | ✅ |
 | `ca_2025.xlsx` | CA réalisé 2025 (référence N-1) | ✅ |
 | `_historique.xlsx` | Cumul mensuel (alimenté par le pipeline) | ✅ |
 | `previsionnel_2026.xlsx` | Prévisionnel pondéré mensuel | ✅ (non sensible) |
@@ -155,7 +183,7 @@ Coller dans le Secret `ABSENCES_B64`. **À refaire chaque mois.** (Dans CMD, tap
 ### Lancer
 
 - **Manuel** : Actions → Pipeline mensuel → Run workflow
-- **Automatique** : cron quotidien 06:00 UTC (le 1er du mois déclenche les étapes spéciales)
+- **Automatique** : cron quotidien 06:00 UTC (le 1er jour ouvré déclenche les étapes spéciales)
 
 ---
 
@@ -173,6 +201,7 @@ $env:TEMPO_TOKEN = "ton_token_tempo"
 python collect_jira_worklogs.py --mois courant --refresh
 python export_mensuel.py
 python generate_dashboard_mensuel.py
+python generate_objectifs.py            # dashboard des objectifs
 python generate_previsionnel.py        # optionnel : prévisionnel du mois
 ```
 
