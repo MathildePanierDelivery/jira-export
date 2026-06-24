@@ -217,6 +217,20 @@ def maj_historique(contexte):
             "dont Rework": clot["nb_rework_clotures"],
         }, hc)
 
+    # ── Onglet backlog_anciennete (photo COURANTE du backlog par tranche × solution) ──
+    bl_anc = contexte.get("backlog_anciennete")
+    if bl_anc:
+        if "backlog_anciennete" in wb.sheetnames:
+            del wb["backlog_anciennete"]   # photo courante : on régénère
+        wsa = wb.create_sheet("backlog_anciennete")
+        tranches = ["M+0", "M+1", "M+2", "M+3", "M+4→6", "M+7→12", "M+13+"]
+        wsa.append(["Solution", "Date photo"] + tranches)
+        from datetime import date as _date
+        photo = _date.today().strftime("%Y-%m-%d")
+        for sol in ["LITTERALIS", "GEODP"]:
+            row = [sol, photo] + [round(bl_anc[sol].get(t, 0), 2) for t in tranches]
+            wsa.append(row)
+
     # ── Onglet commandes (liste) ──
     if "commandes" in wb.sheetnames and contexte.get("commandes_lignes") is not None:
         ws = wb["commandes"]

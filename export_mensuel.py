@@ -1246,10 +1246,54 @@ for k, info in _cache["issues_by_key"].items():
     if blocage == "Blocage projet":
         blocage = "Blocage client"
     sol = _solution_de_ticket(k) or "Autre"
+    # Ancienneté du BDC = création de l'ÉPIC PARENT → aujourd'hui (en mois).
+    epic_key = remonter_vers_epic(k)
+    epic_info = _cache["issues_by_key"].get(epic_key, {})
+    epic_created = epic_info.get("raw_fields", {}).get("created")
+    anc_mois = None
+    if epic_created:
+        try:
+            cd = pd.to_datetime(epic_created).date()
+            anc_mois = (date.today().year - cd.year) * 12 + (date.today().month - cd.month)
+        except Exception:
+            anc_mois = None
     backlog_rows.append({"ticket": k, "solution": sol,
-                         "montant": montant, "blocage": blocage})
+                         "montant": montant, "blocage": blocage,
+                         "anciennete_mois": anc_mois})
 
 df_bl = pd.DataFrame(backlog_rows)
+
+
+def _bucket_anc(m):
+    """Range une ancienneté (en mois) dans une tranche."""
+    if m is None:
+        return "Inconnu"
+    if m <= 0:  return "M+0"
+    if m == 1:  return "M+1"
+    if m == 2:  return "M+2"
+    if m == 3:  return "M+3"
+    if m <= 6:  return "M+4→6"
+    if m <= 12: return "M+7→12"
+    return "M+13+"
+
+
+def _backlog_par_tranche(df):
+    """Répartit le backlog par tranche d'ancienneté × solution.
+       Retourne {solution: {tranche: montant}}."""
+    tranches = ["M+0", "M+1", "M+2", "M+3", "M+4→6", "M+7→12", "M+13+"]
+    res = {"LITTERALIS": {t: 0.0 for t in tranches},
+           "GEODP":      {t: 0.0 for t in tranches}}
+    if df.empty:
+        return res
+    for _, r in df.iterrows():
+        sol = r["solution"]
+        if sol not in res:
+            continue
+        b = _bucket_anc(r.get("anciennete_mois"))
+        if b == "Inconnu":
+            continue
+        res[sol][b] += float(r["montant"])
+    return res
 
 ws_bl = wb.create_sheet("Backlog")
 write_sheet_title(ws_bl, f"Backlog à date — {date.today().strftime('%d/%m/%Y')}",
@@ -1693,6 +1737,7 @@ try:
             "bloque_geodp": bl_geodp_blo, "mob_geodp": bl_geodp_tot - bl_geodp_blo,
             "nb_projets": nb_proj_ouverts, "nb_rework": nb_rew_ouverts,
         },
+        "backlog_anciennete": _backlog_par_tranche(df_bl),
         "commandes_lignes": commandes_lignes,
         "ca_deal_lignes": ca_deal_lignes,
         "anciennete_lignes": anciennete_lignes,
