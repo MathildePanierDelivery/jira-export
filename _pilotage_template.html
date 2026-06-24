@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pilotage annuel — PS France</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F8F8F6; --surface: #FFFFFF; --border: #E8E6E0;
+    --ink: #1A1A18; --muted: #6B6B67; --muted-2: #9B9B96;
+    --litt: #185FA5; --geodp: #854F0B; --green: #3B6D11;
+    --prod: #185FA5; --support: #C99A2E; --interne: #9B9B96;
+    --bad: #993C1D; --amber: #B5740F;
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--ink); }
+  header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 24px 40px;
+  }
+  .home-link {
+    display: inline-flex; align-items: center; gap: 7px; margin-bottom: 8px;
+    color: var(--muted); text-decoration: none; font-size: 13px; font-weight: 600;
+    padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border);
+  }
+  .home-link:hover { background: var(--bg); color: var(--ink); }
+  .eyebrow { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-2); font-weight: 600; }
+  h1 { font-size: 18px; font-weight: 600; margin-top: 4px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 28px 24px 60px; }
+
+  .section { margin-bottom: 30px; }
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+  .section h2 { font-size: 16px; font-weight: 700; }
+  .note { font-size: 12.5px; color: var(--muted-2); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 22px; }
+
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 14px; }
+  .legend-item { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--muted); }
+  .legend-item .sw { width: 12px; height: 12px; border-radius: 3px; }
+  .legend-item .ln { width: 16px; height: 3px; border-radius: 2px; }
+
+  .kpi-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+  .kpi { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px 18px; }
+  .kpi .l { font-size: 12px; color: var(--muted); }
+  .kpi .v { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 9px 12px; text-align: right; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted-2); }
+  tbody tr:hover { background: var(--bg); }
+  .rapport-high { color: var(--bad); font-weight: 600; }
+  .rapport-low { color: var(--green); font-weight: 600; }
+
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .grid-line { stroke: var(--border); stroke-width: 1; }
+  .axis-label { font-size: 10px; fill: var(--muted-2); }
+  footer { text-align: center; color: var(--muted-2); font-size: 12px; padding: 24px; }
+</style>
+</head>
+<body>
+<header>
+  <a href="index.html" class="home-link">← Accueil</a>
+  <div class="eyebrow">PS France · Pilotage de production</div>
+  <h1>Pilotage annuel <span id="year" style="color:var(--muted)"></span></h1>
+</header>
+<main id="app"></main>
+<footer>Tendances issues de l'historique · données agrégées</footer>
+
+<script>
+const D = __DATA__;
+document.getElementById('year').textContent = D.annee;
+
+const eur = n => Math.round(n).toLocaleString('fr-FR') + ' €';
+const eurK = n => Math.round(n/1000) + 'k€';
+
+/* ── Graphe en barres groupées (ou simples) ── */
+function barChart(labels, series, opts={}) {
+  const W = 1000, H = 280, padL = 50, padR = 20, padT = 20, padB = 36;
+  const innerW = W - padL - padR, innerH = H - padT - padB;
+  const allVals = series.flatMap(s => s.values);
+  const max = Math.max(...allVals, 1);
+  const niceMax = Math.ceil(max / 1000) * 1000;
+  const n = labels.length, groups = series.length;
+  const groupW = innerW / n;
+  const barW = Math.min(groupW / (groups + 1), 40);
+
+  let g = '';
+  // grille horizontale + labels Y
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + innerH * i / 4;
+    const val = niceMax * (1 - i/4);
+    g += `<line class="grid-line" x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}"/>`;
+    g += `<text class="axis-label" x="${padL-6}" y="${y+3}" text-anchor="end">${opts.fmt?opts.fmt(val):Math.round(val)}</text>`;
+  }
+  // barres
+  labels.forEach((lab, i) => {
+    const cx = padL + groupW * i + groupW/2;
+    series.forEach((s, j) => {
+      const v = s.values[i] || 0;
+      const h = v / niceMax * innerH;
+      const x = cx - (groups*barW)/2 + j*barW;
+      g += `<rect x="${x}" y="${padT+innerH-h}" width="${barW-2}" height="${h}" fill="${s.color}" rx="2">
+        <title>${lab} · ${s.name}: ${opts.fmt?opts.fmt(v):Math.round(v)}</title></rect>`;
+    });
+    g += `<text class="axis-label" x="${cx}" y="${H-padB+16}" text-anchor="middle">${lab.slice(0,3)}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}">${g}</svg>`;
+}
+
+/* ── Graphe en courbes ── */
+function lineChart(labels, series, opts={}) {
+  const W = 1000, H = 280, padL = 50, padR = 20, padT = 20, padB = 36;
+  const innerW = W - padL - padR, innerH = H - padT - padB;
+  const allVals = series.flatMap(s => s.values);
+  const max = Math.max(...allVals, 1);
+  const niceMax = Math.ceil(max / 1000) * 1000 || 1;
+  const n = labels.length;
+  const xStep = n > 1 ? innerW / (n-1) : 0;
+  const xAt = i => padL + xStep * i;
+  const yAt = v => padT + innerH - (v / niceMax * innerH);
+
+  let g = '';
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + innerH * i / 4;
+    const val = niceMax * (1 - i/4);
+    g += `<line class="grid-line" x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}"/>`;
+    g += `<text class="axis-label" x="${padL-6}" y="${y+3}" text-anchor="end">${opts.fmt?opts.fmt(val):Math.round(val)}</text>`;
+  }
+  labels.forEach((lab, i) => {
+    g += `<text class="axis-label" x="${xAt(i)}" y="${H-padB+16}" text-anchor="middle">${lab.slice(0,3)}</text>`;
+  });
+  series.forEach(s => {
+    const pts = s.values.map((v,i) => `${xAt(i)},${yAt(v)}`).join(' ');
+    const dash = s.dashed ? 'stroke-dasharray="5,4"' : '';
+    g += `<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="2.5" ${dash}
+      stroke-linejoin="round" stroke-linecap="round"/>`;
+    s.values.forEach((v,i) => {
+      g += `<circle cx="${xAt(i)}" cy="${yAt(v)}" r="3.5" fill="${s.color}">
+        <title>${labels[i]} · ${s.name}: ${opts.fmt?opts.fmt(v):Math.round(v)}</title></circle>`;
+    });
+  });
+  return `<svg viewBox="0 0 ${W} ${H}">${g}</svg>`;
+}
+
+function legend(items) {
+  return `<div class="legend">` + items.map(it =>
+    `<span class="legend-item">${it.line?`<span class="ln" style="background:${it.color}"></span>`:`<span class="sw" style="background:${it.color}"></span>`}${it.name}</span>`
+  ).join('') + `</div>`;
+}
+
+function render() {
+  const m = D.mois;
+  let html = '';
+
+  /* 1. CA mensuel */
+  html += `<div class="section"><div class="section-head">
+    <h2>Chiffre d'affaires mensuel</h2><span class="note">réalisé vs objectif vs N-1</span></div>
+    <div class="card">
+      ${legend([{name:'Réalisé',color:'var(--litt)',line:1},{name:'Objectif',color:'var(--amber)',line:1},{name:'N-1',color:'var(--muted-2)',line:1}])}
+      ${lineChart(m, [
+        {name:'Réalisé', values:D.ca.global, color:'var(--litt)'},
+        {name:'Objectif', values:D.ca.obj, color:'var(--amber)', dashed:true},
+        {name:'N-1', values:D.ca.n1, color:'var(--muted-2)', dashed:true},
+      ], {fmt:eurK})}
+    </div></div>`;
+
+  /* 1b. CA par solution */
+  html += `<div class="section"><div class="section-head">
+    <h2>CA par solution</h2><span class="note">Littéralis vs GEODP</span></div>
+    <div class="card">
+      ${legend([{name:'Littéralis',color:'var(--litt)'},{name:'GEODP',color:'var(--geodp)'}])}
+      ${barChart(m, [
+        {name:'Littéralis', values:D.ca.litt, color:'var(--litt)'},
+        {name:'GEODP', values:D.ca.geodp, color:'var(--geodp)'},
+      ], {fmt:eurK})}
+    </div></div>`;
+
+  /* 2. Commandes vs CA déclaré + rapport */
+  const totCmd = D.commandes.reduce((a,b)=>a+b,0);
+  const totCA = D.ca.global.reduce((a,b)=>a+b,0);
+  const rapportGlobal = totCA>0 ? (totCmd/totCA).toFixed(2) : '—';
+  html += `<div class="section"><div class="section-head">
+    <h2>Commandes reçues vs CA déclaré</h2><span class="note">flux entrant vs flux consommé</span></div>
+    <div class="card">
+      <div class="kpi-row">
+        <div class="kpi"><div class="l">Total commandes ${D.annee}</div><div class="v">${eurK(totCmd)}</div></div>
+        <div class="kpi"><div class="l">Total CA déclaré ${D.annee}</div><div class="v">${eurK(totCA)}</div></div>
+        <div class="kpi"><div class="l">Rapport cumulé</div><div class="v" style="color:${rapportGlobal>1?'var(--bad)':'var(--green)'}">${rapportGlobal}</div></div>
+      </div>
+      ${legend([{name:'Commandes reçues',color:'var(--geodp)'},{name:'CA déclaré',color:'var(--litt)'}])}
+      ${barChart(m, [
+        {name:'Commandes', values:D.commandes, color:'var(--geodp)'},
+        {name:'CA déclaré', values:D.ca.global, color:'var(--litt)'},
+      ], {fmt:eurK})}
+      <p class="note" style="margin-top:12px">Rapport > 1 : les commandes entrantes dépassent le CA déclaré (le backlog grossit). Rapport < 1 : on résorbe le backlog.</p>
+    </div></div>`;
+
+  /* 3. Charge mensuelle */
+  html += `<div class="section"><div class="section-head">
+    <h2>Charge mensuelle</h2><span class="note">heures productif / support / interne</span></div>
+    <div class="card">
+      ${legend([{name:'Productif',color:'var(--prod)'},{name:'Support',color:'var(--support)'},{name:'Interne',color:'var(--interne)'}])}
+      ${barChart(m, [
+        {name:'Productif', values:D.charge.prod, color:'var(--prod)'},
+        {name:'Support', values:D.charge.support, color:'var(--support)'},
+        {name:'Interne', values:D.charge.interne, color:'var(--interne)'},
+      ], {fmt:v=>Math.round(v)+'h'})}
+    </div></div>`;
+
+  /* 4. Backlog */
+  html += `<div class="section"><div class="section-head">
+    <h2>Backlog (début de mois)</h2><span class="note">restant à reconnaître</span></div>
+    <div class="card">
+      ${lineChart(m, [{name:'Backlog', values:D.backlog, color:'var(--geodp)'}], {fmt:eurK})}
+    </div></div>`;
+
+  /* 5. Clôtures */
+  const cm = D.clotures_mois.length ? D.clotures_mois : m;
+  html += `<div class="section"><div class="section-head">
+    <h2>Clôtures par mois</h2><span class="note">projets terminés · dont rework</span></div>
+    <div class="card">
+      ${legend([{name:'Projets clôturés',color:'var(--litt)'},{name:'dont Rework',color:'var(--bad)'}])}
+      ${barChart(cm, [
+        {name:'Projets', values:D.clotures.projets, color:'var(--litt)'},
+        {name:'Rework', values:D.clotures.rework, color:'var(--bad)'},
+      ], {fmt:v=>Math.round(v)})}
+    </div></div>`;
+
+  /* Tableau récap */
+  let rows = '';
+  m.forEach((mois, i) => {
+    const cmd = D.commandes[i]||0, ca = D.ca.global[i]||0;
+    const rap = D.rapport[i], rapCum = D.rapport_cum[i];
+    const rapCls = rap > 1 ? 'rapport-high' : (rap>0 && rap<1 ? 'rapport-low':'');
+    rows += `<tr>
+      <td>${mois}</td>
+      <td>${eur(ca)}</td>
+      <td>${eur(cmd)}</td>
+      <td class="${rapCls}">${rap||'—'}</td>
+      <td>${rapCum||'—'}</td>
+      <td>${Math.round((D.charge.prod[i]||0)+(D.charge.support[i]||0)+(D.charge.interne[i]||0))} h</td>
+      <td>${eur(D.backlog[i]||0)}</td>
+      <td>${D.clotures.projets[i]??'—'} / ${D.clotures.rework[i]??'—'}</td>
+    </tr>`;
+  });
+  html += `<div class="section"><div class="section-head"><h2>Récapitulatif annuel</h2></div>
+    <div class="card" style="overflow-x:auto">
+    <table>
+      <thead><tr>
+        <th>Mois</th><th>CA déclaré</th><th>Commandes</th><th>Rapport</th><th>Rapport cumulé</th>
+        <th>Charge</th><th>Backlog</th><th>Clôtures / Rework</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div></div>`;
+
+  document.getElementById('app').innerHTML = html;
+}
+render();
+</script>
+</body>
+</html>
