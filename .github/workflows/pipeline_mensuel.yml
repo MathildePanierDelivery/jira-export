@@ -21,7 +21,8 @@ on:
         type: choice
         options: [courant, precedent]
   schedule:
-    - cron: '0 6 * * *'        # tous les jours 06:00 UTC
+    - cron: '17 5 * * *'        # ~05:17 UTC : heure décalée (les heures rondes
+                                # sont saturées sur GitHub Actions et très retardées)
 
 permissions:
   contents: write
