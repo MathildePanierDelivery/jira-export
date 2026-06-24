@@ -19,6 +19,7 @@ export_mensuel.py          →  jira_export_AAAA-MM-JJ.xlsx (8 onglets)
         ▼
 generate_dashboard_mensuel.py  →  dashboard_mensuel.html  (lit _historique.xlsx)
 generate_objectifs.py      →  objectifs.html              (objectifs d'équipe)
+generate_pilotage.py       →  pilotage.html               (tendances annuelles)
 
 generate_previsionnel.py   →  previsionnel_2026.xlsx      (snapshot 1er jour ouvré)
 ```
@@ -35,6 +36,7 @@ generate_previsionnel.py   →  previsionnel_2026.xlsx      (snapshot 1er jour o
 | `maj_historique.py` | Module appelé par l'export : écrit la ligne du mois | — |
 | `generate_dashboard_mensuel.py` | Dashboard web depuis l'historique | `dashboard_mensuel.html` |
 | `generate_objectifs.py` | Dashboard de suivi des objectifs d'équipe | `objectifs.html` |
+| `generate_pilotage.py` | Dashboard de pilotage annuel (tendances) | `pilotage.html` |
 | `generate_previsionnel.py` | Prévisionnel pondéré du mois (par CP, par solution) | `previsionnel_2026.xlsx` |
 | `orchestration.py` | Détermine les actions selon la date (1er jour ouvré ?) | flags workflow |
 
@@ -73,7 +75,7 @@ Les worklogs sont saisis via **Tempo**, pas l'API Jira native (qui renvoie un co
 À chaque run, `export_mensuel.py` écrit (ou écrase) la ligne du **mois courant** dans
 `_historique.xlsx` (onglets `ca`, `charge`, `backlog`, `commandes`, `ca_deal`, `anciennete`, `clotures`).
 
-- **CA N-1** récupéré automatiquement depuis `ca_2025.xlsx`.
+- **CA PY** (année précédente) récupéré automatiquement depuis `ca_2025.xlsx`.
 - **Ancienneté** : seules les épics avec du CA déclaré.
 - **Charge** : productif (détaillé en projet avec CA / gratuit / rework), support, interne, par solution ; plus heures saisies à date, capacité attendue et capacité totale.
 - **Backlog début de mois** : photo figée au 1er run du mois (colonnes `backlog_debut_mois_*`), jamais écrasée → tendance mensuelle.
@@ -134,13 +136,24 @@ Pour les mois passés, les données fines absentes (heures à date, gratuit isol
 
 Cibles modifiables dans `objectifs.xlsx` sans toucher au code.
 
+### Dashboard de pilotage annuel (`pilotage.html`)
+
+`generate_pilotage.py` lit tout l'historique et produit une vue **tendances multi-mois** :
+- **CA mensuel** : réalisé vs objectif vs PY (année précédente)
+- **CA par solution** : Littéralis vs GEODP
+- **Commandes reçues vs CA déclaré** : flux entrant vs consommé, avec rapport mensuel et cumulé (rapport > 1 = le backlog grossit ; < 1 = on le résorbe)
+- **Charge mensuelle** : productif / support / interne
+- **Backlog** : évolution du début de mois
+- **Clôtures** : projets + rework par mois
+- **Tableau récapitulatif annuel**
+
 ## Fichiers de configuration
 
 | Fichier | Contenu | Publié ? |
 |---------|---------|----------|
 | `absences_2026.xlsx` | Congés / maladie, un onglet par mois | ❌ sensible (Secret) |
 | `objectifs.xlsx` | Objectifs CA (Budget / LE1 / LE2) + onglet ObjectifsEquipe (cibles équipe) | ✅ |
-| `ca_2025.xlsx` | CA réalisé 2025 (référence N-1) | ✅ |
+| `ca_2025.xlsx` | CA réalisé 2025 (référence PY) | ✅ |
 | `_historique.xlsx` | Cumul mensuel (alimenté par le pipeline) | ✅ |
 | `previsionnel_2026.xlsx` | Prévisionnel pondéré mensuel | ✅ (non sensible) |
 
@@ -202,6 +215,7 @@ python collect_jira_worklogs.py --mois courant --refresh
 python export_mensuel.py
 python generate_dashboard_mensuel.py
 python generate_objectifs.py            # dashboard des objectifs
+python generate_pilotage.py             # pilotage annuel
 python generate_previsionnel.py        # optionnel : prévisionnel du mois
 ```
 

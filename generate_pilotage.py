@@ -5,7 +5,7 @@ Génère le dashboard de pilotage annuel (pilotage.html) : vue TENDANCES
 multi-mois, à partir de _historique.xlsx.
 
 Tendances :
-  1. CA mensuel (réalisé global / Littéralis / GEODP, + objectif, + N-1)
+  1. CA mensuel (réalisé global / Littéralis / GEODP, + objectif, + PY)
   2. Commandes reçues vs CA déclaré (+ rapport mensuel et cumulé)
   3. Charge mensuelle (productif / support / interne)
   4. Backlog début de mois (évolution)

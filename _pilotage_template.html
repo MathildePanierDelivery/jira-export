@@ -156,13 +156,13 @@ function render() {
 
   /* 1. CA mensuel */
   html += `<div class="section"><div class="section-head">
-    <h2>Chiffre d'affaires mensuel</h2><span class="note">réalisé vs objectif vs N-1</span></div>
+    <h2>Chiffre d'affaires mensuel</h2><span class="note">réalisé vs objectif vs PY</span></div>
     <div class="card">
-      ${legend([{name:'Réalisé',color:'var(--litt)',line:1},{name:'Objectif',color:'var(--amber)',line:1},{name:'N-1',color:'var(--muted-2)',line:1}])}
+      ${legend([{name:'Réalisé',color:'var(--litt)',line:1},{name:'Objectif',color:'var(--amber)',line:1},{name:'PY',color:'var(--muted-2)',line:1}])}
       ${lineChart(m, [
         {name:'Réalisé', values:D.ca.global, color:'var(--litt)'},
         {name:'Objectif', values:D.ca.obj, color:'var(--amber)', dashed:true},
-        {name:'N-1', values:D.ca.n1, color:'var(--muted-2)', dashed:true},
+        {name:'PY', values:D.ca.n1, color:'var(--muted-2)', dashed:true},
       ], {fmt:eurK})}
     </div></div>`;
 
