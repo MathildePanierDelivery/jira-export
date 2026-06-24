@@ -1708,4 +1708,8 @@ try:
     }
     maj_historique(contexte)
 except Exception as e:
+    import traceback
     print(f"   ⚠ Accumulation historique échouée : {e}")
+    print("   ── Trace complète ──")
+    traceback.print_exc()
+    print("   ────────────────────")
