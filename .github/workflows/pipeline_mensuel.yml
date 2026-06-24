@@ -120,14 +120,18 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Récupérer les éventuels changements distants AVANT de committer,
-          # en mettant de côté nos fichiers générés (évite les conflits binaires).
-          git stash push -- dashboard_mensuel.html objectifs.html index.html \
-            _historique.xlsx previsionnel_2026.xlsx 2>/dev/null || true
+          # Mettre de côté TOUTES nos modifications générées (sans lister de
+          # fichiers, pour éviter les erreurs sur un fichier absent comme le
+          # prévisionnel qui n'existe qu'au 1er jour ouvré).
+          git stash push --include-untracked 2>/dev/null || true
           git pull --rebase origin ${{ github.ref_name }} || true
           git stash pop 2>/dev/null || true
 
-          git add dashboard_mensuel.html objectifs.html index.html _historique.xlsx previsionnel_2026.xlsx
+          # Ajouter uniquement les livrables présents (|| true par fichier).
+          for f in dashboard_mensuel.html objectifs.html index.html \
+                   _historique.xlsx previsionnel_2026.xlsx; do
+            [ -f "$f" ] && git add "$f" || true
+          done
           git add jira_export_*.xlsx 2>/dev/null || true
 
           echo "── Fichiers en attente de commit ──"
