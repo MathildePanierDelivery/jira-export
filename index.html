@@ -59,12 +59,18 @@
 </head>
 <body>
 
+<div id="bascule-banner" style="display:none;background:#FBF3E5;border-bottom:1px solid #E8D9BC;
+  color:#6B5526;padding:12px 40px;font-size:13.5px;font-weight:600;text-align:center">
+  🔒 Bascule mensuelle en cours — le mois courant est en pause le temps de la clôture.
+  <span style="font-weight:400">Les données reprendront à la fin de la bascule.</span>
+</div>
+
 <header>
   <div class="header-title">
     <h1>Professional Services France</h1>
-    <p>Tableaux de bord — mis à jour chaque matin automatiquement</p>
+    <p>Tableaux de bord — mis à jour automatiquement (7h et 12h)</p>
   </div>
-  <div class="update-badge">⟳ Automatique · lun–ven 7h UTC</div>
+  <div class="update-badge">⟳ Automatique · 7h et 12h</div>
 </header>
 
 <main>
@@ -163,6 +169,11 @@ async function downloadLatestXlsx() {
 }
 
 findLatestXlsx();
+
+// Détection du verrou de bascule : si bascule_en_cours.flag existe, afficher le bandeau.
+fetch('bascule_en_cours.flag', { method: 'HEAD', cache: 'no-store' })
+  .then(r => { if (r.ok) document.getElementById('bascule-banner').style.display = 'block'; })
+  .catch(() => {});
 </script>
 
 </body>
