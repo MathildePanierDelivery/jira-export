@@ -217,6 +217,39 @@ def maj_historique(contexte):
             "dont Rework": clot["nb_rework_clotures"],
         }, hc)
 
+    # ── Onglet backlog_facturable (photo COURANTE : composantes + phases + blocages) ──
+    bl_fact = contexte.get("backlog_facturable")
+    if bl_fact:
+        if "backlog_facturable" in wb.sheetnames:
+            del wb["backlog_facturable"]
+        wsf = wb.create_sheet("backlog_facturable")
+        from datetime import date as _date
+        photo = _date.today().strftime("%Y-%m-%d")
+        phases = ["Lancement & prérequis", "Mise en service",
+                  "Paramétrage & recette", "PV signé"]
+        blocages = ["Aucun", "Blocage client", "Blocage produit",
+                    "Blocage commerce", "Autre"]
+        # En-tête : une ligne par solution, colonnes = indicateurs
+        cols = (["Solution", "Date photo", "Total", "Mobilisable", "Bloqué",
+                 "Temps total", "Temps mobilisable", "Temps bloqué",
+                 "Nb", "Nb mobilisable", "Nb bloqué"]
+                + [f"Phase: {p}" for p in phases]
+                + [f"NbPhase: {p}" for p in phases]
+                + [f"Bloc: {b}" for b in blocages]
+                + [f"NbBloc: {b}" for b in blocages])
+        wsf.append(cols)
+        for sol in ["LITTERALIS", "GEODP"]:
+            d = bl_fact[sol]
+            row = [sol, photo,
+                   round(d["total"], 2), round(d["mobilisable"], 2), round(d["bloque"], 2),
+                   round(d["temps_total"], 1), round(d["temps_mobilisable"], 1), round(d["temps_bloque"], 1),
+                   d["nb"], d["nb_mobilisable"], d["nb_bloque"]]
+            row += [round(d["par_phase"][p], 2) for p in phases]
+            row += [d["nb_par_phase"][p] for p in phases]
+            row += [round(d["par_blocage"][b], 2) for b in blocages]
+            row += [d["nb_par_blocage"][b] for b in blocages]
+            wsf.append(row)
+
     # ── Onglet backlog_anciennete (photo COURANTE du backlog par tranche × solution) ──
     bl_anc = contexte.get("backlog_anciennete")
     if bl_anc:

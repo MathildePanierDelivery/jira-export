@@ -86,6 +86,11 @@ JIRA_FIELDS = [
     "customfield_24564",   # Montant commande (fallback)
     "customfield_26148",   # Temps passé bloqué
     "customfield_26606",   # Temps passé dépassé
+    "customfield_26672",   # Détail blocage
+    "customfield_26878",   # Service responsable (qui bloque)
+    "customfield_23645",   # Jalon actuel (nom)
+    "customfield_10384",   # Temps restant (somme sous-tâches)
+    "customfield_21447",   # Remise
     "customfield_26980",   # (maj_reconnaissance_ca)
 ]
 

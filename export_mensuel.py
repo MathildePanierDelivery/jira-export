@@ -1224,6 +1224,25 @@ def _solution_de_ticket(ticket_key):
         return "LITTERALIS"
     return sol
 
+def _phase_de_pct(pct):
+    """Mappe un % d'avancement (0-100) vers l'une des 4 phases du modèle."""
+    if pct is None:
+        return "Lancement & prérequis"
+    if pct < 10:   return "Lancement & prérequis"   # 0→10%
+    if pct < 20:   return "Mise en service"          # 10→20%
+    if pct < 90:   return "Paramétrage & recette"    # 20→90%
+    return "PV signé"                                 # 90→100%
+
+
+def _composante_de_categorie(cat):
+    """Regroupe la catégorie d'épic en 3 composantes du backlog."""
+    if cat in ("Rework",):
+        return "Rework"
+    if cat in ("Prestation offerte", "Commande sans prestation", "Maintenance"):
+        return "Prestations gratuites"
+    return "Facturable"
+
+
 backlog_rows = []
 for k, info in _cache["issues_by_key"].items():
     if info.get("issuetype") != "COORDIN : Suivi CA":
@@ -1246,8 +1265,27 @@ for k, info in _cache["issues_by_key"].items():
     if blocage == "Blocage projet":
         blocage = "Blocage client"
     sol = _solution_de_ticket(k) or "Autre"
+    # Catégorie (→ composante facturable / rework / gratuit)
+    cat, _, epic_key = _categorie_et_solution(k)
+    composante = _composante_de_categorie(cat)
+    # Jalon % (0-100) → phase du modèle
+    jalon_pct_raw = raw.get("customfield_21883")
+    try:
+        jalon_pct = float(jalon_pct_raw) if jalon_pct_raw not in (None, "") else None
+    except (ValueError, TypeError):
+        jalon_pct = None
+    phase = _phase_de_pct(jalon_pct)
+    # Temps restant (somme sous-tâches, champ 10384)
+    temps_restant = 0.0
+    tr_raw = raw.get("customfield_10384")
+    if tr_raw not in (None, ""):
+        try:
+            temps_restant = float(tr_raw) / 3600  # secondes → heures
+        except (ValueError, TypeError):
+            temps_restant = 0.0
     # Ancienneté du BDC = création de l'ÉPIC PARENT → aujourd'hui (en mois).
-    epic_key = remonter_vers_epic(k)
+    if not epic_key:
+        epic_key = remonter_vers_epic(k)
     epic_info = _cache["issues_by_key"].get(epic_key, {})
     epic_created = epic_info.get("raw_fields", {}).get("created")
     anc_mois = None
@@ -1259,9 +1297,66 @@ for k, info in _cache["issues_by_key"].items():
             anc_mois = None
     backlog_rows.append({"ticket": k, "solution": sol,
                          "montant": montant, "blocage": blocage,
+                         "composante": composante, "phase": phase,
+                         "jalon_pct": jalon_pct, "temps_restant": temps_restant,
                          "anciennete_mois": anc_mois})
 
 df_bl = pd.DataFrame(backlog_rows)
+
+
+def _backlog_facturable_analyse(df):
+    """Analyse du backlog facturable, par solution.
+       Retourne, pour LITTERALIS et GEODP :
+       - mobilisable / bloqué (montant + temps)
+       - répartition des montants par phase (4 phases du modèle)
+       - répartition par type de blocage."""
+    phases = ["Lancement & prérequis", "Mise en service",
+              "Paramétrage & recette", "PV signé"]
+    blocages = ["Aucun", "Blocage client", "Blocage produit",
+                "Blocage commerce", "Autre"]
+
+    def _vide():
+        return {
+            "total": 0.0, "mobilisable": 0.0, "bloque": 0.0,
+            "temps_total": 0.0, "temps_mobilisable": 0.0, "temps_bloque": 0.0,
+            "nb": 0, "nb_mobilisable": 0, "nb_bloque": 0,
+            "par_phase": {p: 0.0 for p in phases},
+            "nb_par_phase": {p: 0 for p in phases},
+            "par_blocage": {b: 0.0 for b in blocages},
+            "nb_par_blocage": {b: 0 for b in blocages},
+        }
+
+    res = {"LITTERALIS": _vide(), "GEODP": _vide()}
+    if df.empty:
+        return res
+
+    # Seul le facturable a un montant > 0 ; rework/gratuit traités plus tard.
+    fact = df[df["composante"] == "Facturable"]
+    for _, r in fact.iterrows():
+        sol = r["solution"]
+        if sol not in res:
+            continue
+        d = res[sol]
+        m = float(r["montant"])
+        t = float(r.get("temps_restant") or 0)
+        bloque = r["blocage"] != "Aucun"
+        d["total"] += m
+        d["temps_total"] += t
+        d["nb"] += 1
+        if bloque:
+            d["bloque"] += m; d["temps_bloque"] += t; d["nb_bloque"] += 1
+        else:
+            d["mobilisable"] += m; d["temps_mobilisable"] += t; d["nb_mobilisable"] += 1
+        # par phase
+        ph = r["phase"]
+        if ph in d["par_phase"]:
+            d["par_phase"][ph] += m
+            d["nb_par_phase"][ph] += 1
+        # par blocage
+        bl = r["blocage"] if r["blocage"] in blocages else "Autre"
+        d["par_blocage"][bl] += m
+        d["nb_par_blocage"][bl] += 1
+    return res
 
 
 def _bucket_anc(m):
@@ -1738,6 +1833,7 @@ try:
             "nb_projets": nb_proj_ouverts, "nb_rework": nb_rew_ouverts,
         },
         "backlog_anciennete": _backlog_par_tranche(df_bl),
+        "backlog_facturable": _backlog_facturable_analyse(df_bl),
         "commandes_lignes": commandes_lignes,
         "ca_deal_lignes": ca_deal_lignes,
         "anciennete_lignes": anciennete_lignes,
