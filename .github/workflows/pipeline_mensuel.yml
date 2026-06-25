@@ -111,6 +111,9 @@ jobs:
       - name: Générer le pilotage annuel
         run: python generate_pilotage.py
 
+      - name: Générer l'analyse du backlog
+        run: python generate_projections.py
+
       # ── Nettoyer les fichiers sensibles AVANT publication ──
       - name: Supprimer les fichiers sensibles
         if: always()
@@ -132,7 +135,7 @@ jobs:
           git stash pop 2>/dev/null || true
 
           # Ajouter uniquement les livrables présents (|| true par fichier).
-          for f in dashboard_mensuel.html objectifs.html pilotage.html index.html \
+          for f in dashboard_mensuel.html objectifs.html pilotage.html projections.html index.html \
                    _historique.xlsx previsionnel_2026.xlsx; do
             [ -f "$f" ] && git add "$f" || true
           done
