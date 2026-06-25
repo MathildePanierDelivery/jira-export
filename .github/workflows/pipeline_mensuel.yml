@@ -20,9 +20,10 @@ on:
         default: 'courant'
         type: choice
         options: [courant, precedent]
-  schedule:
-    - cron: '17 5 * * *'        # ~05:17 UTC : heure décalée (les heures rondes
-                                # sont saturées sur GitHub Actions et très retardées)
+  # Note : le déclenchement quotidien (7h et 12h, heure de Paris) est assuré
+  # par un service externe (cron-job.org) qui appelle l'API workflow_dispatch.
+  # Les schedule: cron de GitHub Actions sont trop peu fiables (retards de
+  # plusieurs heures sur les comptes gratuits) et ont été retirés.
 
 permissions:
   contents: write
