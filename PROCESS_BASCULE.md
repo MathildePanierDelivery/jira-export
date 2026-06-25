@@ -60,6 +60,8 @@ Une fois les ajustements terminés :
 4. Cliquer **"Run workflow"** (le bouton vert)
 
 Le pipeline collecte le mois écoulé et l'enregistre dans l'historique.
+Une copie de l'export complet est aussi archivée dans **`archives_mensuelles/`**,
+nommée `AAAA-MM_Mois.xlsx` (ex : `2026-06_Juin.xlsx`).
 
 ### 3. Vérifier que le figement est bon
 

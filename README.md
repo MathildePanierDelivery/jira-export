@@ -39,7 +39,8 @@ generate_previsionnel.py   →  previsionnel_2026.xlsx      (snapshot 1er jour o
 | `generate_pilotage.py` | Dashboard de pilotage annuel (tendances) | `pilotage.html` |
 | `generate_projections.py` | Analyse du backlog (composantes, jalons, phases) | `projections.html` |
 | `generate_previsionnel.py` | Prévisionnel pondéré du mois (par CP, par solution) | `previsionnel_2026.xlsx` |
-| `orchestration.py` | Détermine les actions selon la date (1er jour ouvré ?) | flags workflow |
+| `orchestration.py` | Gère le verrou de bascule mensuelle (pose le 1er, levée auto à 10j) | `bascule_en_cours.flag` |
+| `archiver_mois.py` | Archive l'export du mois figé dans `archives_mensuelles/` | `AAAA-MM_Mois.xlsx` |
 
 ### Pourquoi un collecteur séparé ?
 
