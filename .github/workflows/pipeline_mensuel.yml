@@ -92,6 +92,7 @@ jobs:
           echo "── Figement MANUEL du mois précédent ──"
           python collect_jira_worklogs.py --mois precedent --refresh
           python export_mensuel.py
+          python archiver_mois.py
           rm -f jira_cache.pkl
 
       # ════════════════════════════════════════════════════════════
@@ -165,6 +166,8 @@ jobs:
           done
           # Le verrou de bascule : git add -A pour capturer sa création ET sa suppression.
           git add -A bascule_en_cours.flag 2>/dev/null || true
+          # Les archives mensuelles (exports figés, nommés AAAA-MM_Mois.xlsx).
+          git add archives_mensuelles/*.xlsx 2>/dev/null || true
           git add jira_export_*.xlsx 2>/dev/null || true
 
           echo "── Fichiers en attente de commit ──"
