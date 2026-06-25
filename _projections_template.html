@@ -98,7 +98,6 @@ if (!D.disponible) {
     `<div class="empty-state">Données de backlog pas encore disponibles.<br>Elles seront générées au prochain passage du pipeline.</div>`;
 } else {
   document.getElementById('photo').textContent = 'Photo au ' + D.photo;
-  render();
 }
 
 const PHASE_COLORS = {
@@ -215,6 +214,8 @@ function render() {
 
   document.getElementById('app').innerHTML = html;
 }
+
+if (D.disponible) render();
 
 /* ── Infobulle interactive ── */
 (function(){
