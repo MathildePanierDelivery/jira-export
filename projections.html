@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analyse du backlog — PS France</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F8F8F6; --surface: #FFFFFF; --border: #E8E6E0;
+    --ink: #1A1A18; --muted: #6B6B67; --muted-2: #9B9B96;
+    --litt: #185FA5; --geodp: #854F0B; --green: #3B6D11;
+    --bad: #993C1D; --amber: #B5740F;
+    --p1: #3B6D11; --p2: #6BA12E; --p3: #C99A2E; --p4: #185FA5;
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--ink); }
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 24px 40px; }
+  .home-link { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 8px;
+    color: var(--muted); text-decoration: none; font-size: 13px; font-weight: 600;
+    padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); }
+  .home-link:hover { background: var(--bg); color: var(--ink); }
+  .eyebrow { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-2); font-weight: 600; }
+  h1 { font-size: 18px; font-weight: 600; margin-top: 4px; }
+  .photo-date { font-size: 12.5px; color: var(--muted-2); margin-top: 2px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 28px 24px 60px; }
+
+  .section { margin-bottom: 32px; }
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+  .section h2 { font-size: 16px; font-weight: 700; }
+  .note { font-size: 12.5px; color: var(--muted-2); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 22px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .sol-title { font-size: 13px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .sol-title .dot { width: 11px; height: 11px; border-radius: 3px; }
+  .sol-litt .dot { background: var(--litt); }
+  .sol-geodp .dot { background: var(--geodp); }
+
+  .kpi-mini { display: flex; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
+  .kpi-mini .k { flex: 1; min-width: 90px; }
+  .kpi-mini .kl { font-size: 11.5px; color: var(--muted); }
+  .kpi-mini .kv { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .kpi-mini .ks { font-size: 11px; color: var(--muted-2); }
+
+  /* barre mobilisable / bloqué */
+  .split-bar { display: flex; height: 30px; border-radius: 7px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 8px; }
+  .split-seg { display: flex; align-items: center; justify-content: center; color: #fff;
+    font-size: 12px; font-weight: 600; cursor: pointer; transition: opacity .12s; }
+  .split-seg:hover { opacity: .85; }
+
+  /* barres par phase */
+  .phase-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .phase-name { width: 150px; font-size: 12.5px; flex-shrink: 0; }
+  .phase-track { flex: 1; height: 24px; background: var(--bg); border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .phase-fill { height: 100%; display: flex; align-items: center; padding: 0 8px; color: #fff; font-size: 11.5px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: opacity .12s; }
+  .phase-fill:hover { opacity: .85; }
+  .phase-amt { width: 78px; text-align: right; font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+
+  /* modèle de jalonnement */
+  .jalon-flow { display: flex; gap: 0; flex-wrap: wrap; }
+  .jalon-step { flex: 1; min-width: 200px; padding: 16px; border-radius: 10px; margin: 4px; color: #fff; position: relative; }
+  .jalon-pct { font-family: 'DM Mono', monospace; font-size: 13px; opacity: .9; }
+  .jalon-name { font-size: 15px; font-weight: 700; margin: 4px 0; }
+  .jalon-resp { font-size: 11.5px; opacity: .9; font-weight: 600; margin-bottom: 8px; }
+  .jalon-desc { font-size: 11.5px; opacity: .92; line-height: 1.4; }
+  .jalon-note { background: #FBF3E5; border: 1px solid #E8D9BC; border-radius: 10px; padding: 14px 18px; margin-top: 14px; font-size: 13px; color: #6B5526; line-height: 1.5; }
+
+  #tooltip { position: fixed; pointer-events: none; z-index: 100; background: var(--ink); color: #fff;
+    padding: 8px 12px; border-radius: 8px; font-size: 12.5px; line-height: 1.45;
+    box-shadow: 0 6px 20px rgba(0,0,0,.18); opacity: 0; transition: opacity .12s; white-space: nowrap; }
+  #tooltip.show { opacity: 1; }
+  #tooltip .tt-label { color: var(--muted-2); font-size: 11px; }
+  #tooltip .tt-val { font-weight: 700; font-variant-numeric: tabular-nums; }
+  footer { text-align: center; color: var(--muted-2); font-size: 12px; padding: 24px; }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted-2); }
+</style>
+</head>
+<body>
+<header>
+  <a href="index.html" class="home-link">← Accueil</a>
+  <div class="eyebrow">PS France · Analyse du backlog</div>
+  <h1>Backlog facturable</h1>
+  <div class="photo-date" id="photo"></div>
+</header>
+<main id="app"></main>
+<div id="tooltip"></div>
+<footer>Photo du backlog à la date d'extraction · recalculé à chaque mise à jour</footer>
+
+<script>
+const D = {"disponible": true, "photo": "2026-06-25", "litt": {"total": 194066.5, "mobilisable": 87317.58, "bloque": 106748.91, "nb": 91, "nb_mobilisable": 37, "nb_bloque": 54, "temps_total": 0.0, "temps_mobilisable": 0.0, "temps_bloque": 0.0, "par_phase": {"Lancement & prérequis": 42293.5, "Mise en service": 16617.6, "Paramétrage & recette": 126649.57, "PV signé": 8505.83}, "nb_par_phase": {"Lancement & prérequis": 17, "Mise en service": 3, "Paramétrage & recette": 59, "PV signé": 12}, "par_blocage": {"Aucun": 87317.58, "Blocage client": 97829.64, "Blocage produit": 4849.37, "Blocage commerce": 4069.9, "Autre": 0.0}, "nb_par_blocage": {"Aucun": 37, "Blocage client": 45, "Blocage produit": 6, "Blocage commerce": 3, "Autre": 0}}, "geodp": {"total": 176665.2, "mobilisable": 83805.29, "bloque": 92859.91, "nb": 76, "nb_mobilisable": 35, "nb_bloque": 41, "temps_total": 0.0, "temps_mobilisable": 0.0, "temps_bloque": 0.0, "par_phase": {"Lancement & prérequis": 49995.0, "Mise en service": 53662.5, "Paramétrage & recette": 66738.98, "PV signé": 6268.72}, "nb_par_phase": {"Lancement & prérequis": 17, "Mise en service": 9, "Paramétrage & recette": 31, "PV signé": 19}, "par_blocage": {"Aucun": 83805.29, "Blocage client": 62963.15, "Blocage produit": 15361.62, "Blocage commerce": 14535.14, "Autre": 0.0}, "nb_par_blocage": {"Aucun": 35, "Blocage client": 26, "Blocage produit": 12, "Blocage commerce": 3, "Autre": 0}}, "phases": ["Lancement & prérequis", "Mise en service", "Paramétrage & recette", "PV signé"], "blocages": ["Aucun", "Blocage client", "Blocage produit", "Blocage commerce", "Autre"]};
+const eur = n => Math.round(n).toLocaleString('fr-FR') + ' €';
+const eurK = n => Math.round(n/1000) + 'k€';
+
+if (!D.disponible) {
+  document.getElementById('app').innerHTML =
+    `<div class="empty-state">Données de backlog pas encore disponibles.<br>Elles seront générées au prochain passage du pipeline.</div>`;
+} else {
+  document.getElementById('photo').textContent = 'Photo au ' + D.photo;
+  render();
+}
+
+const PHASE_COLORS = {
+  'Lancement & prérequis': 'var(--p1)',
+  'Mise en service': 'var(--p2)',
+  'Paramétrage & recette': 'var(--p3)',
+  'PV signé': 'var(--p4)',
+};
+const BLOC_COLORS = {
+  'Aucun': 'var(--green)', 'Blocage client': 'var(--bad)',
+  'Blocage produit': 'var(--amber)', 'Blocage commerce': '#7A5CA8', 'Autre': 'var(--muted-2)',
+};
+
+function composantesCard(name, cls, d) {
+  const totMob = d.mobilisable, totBlo = d.bloque, tot = d.total || 1;
+  const pMob = totMob/tot*100, pBlo = totBlo/tot*100;
+  return `<div class="card sol-${cls}">
+    <div class="sol-title sol-${cls}"><span class="dot"></span>${name}</div>
+    <div class="kpi-mini">
+      <div class="k"><div class="kl">Backlog total</div><div class="kv">${eurK(d.total)}</div><div class="ks">${d.nb} BDC</div></div>
+      <div class="k"><div class="kl">Mobilisable</div><div class="kv" style="color:var(--green)">${eurK(d.mobilisable)}</div><div class="ks">${d.nb_mobilisable} BDC · ${Math.round(pMob)}%</div></div>
+      <div class="k"><div class="kl">Bloqué</div><div class="kv" style="color:var(--bad)">${eurK(d.bloque)}</div><div class="ks">${d.nb_bloque} BDC · ${Math.round(pBlo)}%</div></div>
+    </div>
+    <div class="split-bar">
+      <div class="split-seg" style="width:${pMob}%;background:var(--green)"
+        data-tip="Mobilisable|${eur(d.mobilisable)} · ${d.nb_mobilisable} BDC">${pMob>12?'Mobilisable':''}</div>
+      <div class="split-seg" style="width:${pBlo}%;background:var(--bad)"
+        data-tip="Bloqué|${eur(d.bloque)} · ${d.nb_bloque} BDC">${pBlo>12?'Bloqué':''}</div>
+    </div>
+    <div class="note">Détail des blocages : ${D.blocages.filter(b=>b!=='Aucun'&&d.par_blocage[b]>0).map(b=>
+      `${b.replace('Blocage ','')} ${eurK(d.par_blocage[b])}`).join(' · ') || 'aucun blocage'}</div>
+  </div>`;
+}
+
+function phasesCard(name, cls, d) {
+  const max = Math.max(...D.phases.map(p=>d.par_phase[p]), 1);
+  let rows = '';
+  for (const p of D.phases) {
+    const v = d.par_phase[p], nb = d.nb_par_phase[p];
+    const w = v/max*100;
+    rows += `<div class="phase-row">
+      <span class="phase-name">${p}</span>
+      <div class="phase-track">
+        <div class="phase-fill" style="width:${Math.max(w,0)}%;background:${PHASE_COLORS[p]}"
+          data-tip="${p}|${eur(v)} · ${nb} BDC">${w>20?nb+' BDC':''}</div>
+      </div>
+      <span class="phase-amt">${eurK(v)}</span>
+    </div>`;
+  }
+  return `<div class="card sol-${cls}">
+    <div class="sol-title sol-${cls}"><span class="dot"></span>${name}</div>
+    ${rows}
+  </div>`;
+}
+
+function render() {
+  let html = '';
+
+  /* 1. Composantes */
+  html += `<div class="section"><div class="section-head">
+    <h2>Composantes du backlog facturable</h2>
+    <span class="note">mobilisable vs bloqué</span></div>
+    <div class="grid-2">
+      ${composantesCard('Littéralis','litt',D.litt)}
+      ${composantesCard('GEODP','geodp',D.geodp)}
+    </div></div>`;
+
+  /* 2. Modèle de jalonnement */
+  html += `<div class="section"><div class="section-head">
+    <h2>En pratique : le modèle de jalonnement</h2></div>
+    <div class="card">
+      <p class="note" style="margin-bottom:14px">La reconnaissance du CA suit ce séquencement, dont aucune étape ne peut être évitée.</p>
+      <div class="jalon-flow">
+        <div class="jalon-step" style="background:var(--p1)">
+          <div class="jalon-pct">0 → 10%</div>
+          <div class="jalon-name">Lancement & prérequis</div>
+          <div class="jalon-resp">CP</div>
+          <div class="jalon-desc">Planification & réalisation du lancement. Récupération des prérequis indispensables à la mise en service.</div>
+        </div>
+        <div class="jalon-step" style="background:var(--p2)">
+          <div class="jalon-pct">10 → 20%</div>
+          <div class="jalon-name">Mise en service</div>
+          <div class="jalon-resp">SYS + CP</div>
+          <div class="jalon-desc">Mise en service de la solution par l'équipe système.</div>
+        </div>
+        <div class="jalon-step" style="background:var(--p3)">
+          <div class="jalon-pct">20 → 90%</div>
+          <div class="jalon-name">Paramétrage & recette</div>
+          <div class="jalon-resp">CD + client</div>
+          <div class="jalon-desc">Paramétrage par le chargé de déploiement. Accompagnement à la recette à hauteur de 30% du temps vendu.</div>
+        </div>
+        <div class="jalon-step" style="background:var(--p4)">
+          <div class="jalon-pct">90 → 100%</div>
+          <div class="jalon-name">PV signé</div>
+          <div class="jalon-resp">client</div>
+          <div class="jalon-desc">Envoi du PV, relances si nécessaire. Signature par le client.</div>
+        </div>
+      </div>
+      <div class="jalon-note">
+        <strong>La phase de recette est par nature incompressible.</strong>
+        Les phases 20→90% (recette) et 90→100% (PV) dépendent des retours et de la disponibilité du client.
+        C'est la temporalité et le jalonnement — plus que la capacité — qui déterminent le rythme d'écoulement du backlog.
+      </div>
+    </div></div>`;
+
+  /* 3. Répartition par phase */
+  html += `<div class="section"><div class="section-head">
+    <h2>Répartition du backlog par phase</h2>
+    <span class="note">montant restant à reconnaître</span></div>
+    <div class="grid-2">
+      ${phasesCard('Littéralis','litt',D.litt)}
+      ${phasesCard('GEODP','geodp',D.geodp)}
+    </div></div>`;
+
+  document.getElementById('app').innerHTML = html;
+}
+
+/* ── Infobulle interactive ── */
+(function(){
+  const tip = document.getElementById('tooltip');
+  const app = document.getElementById('app');
+  app.addEventListener('mouseover', e => {
+    const el = e.target.closest('[data-tip]');
+    if (!el) return;
+    const [label, val] = el.getAttribute('data-tip').split('|');
+    tip.innerHTML = `<div class="tt-label">${label}</div><div class="tt-val">${val}</div>`;
+    tip.classList.add('show');
+  });
+  app.addEventListener('mousemove', e => {
+    if (!tip.classList.contains('show')) return;
+    let x = e.clientX + 14, y = e.clientY + 14;
+    const r = tip.getBoundingClientRect();
+    if (x + r.width > window.innerWidth) x = e.clientX - r.width - 14;
+    if (y + r.height > window.innerHeight) y = e.clientY - r.height - 14;
+    tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  });
+  app.addEventListener('mouseout', e => {
+    if (e.target.closest('[data-tip]')) tip.classList.remove('show');
+  });
+})();
+</script>
+</body>
+</html>
