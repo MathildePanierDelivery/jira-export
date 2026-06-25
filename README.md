@@ -37,6 +37,7 @@ generate_previsionnel.py   →  previsionnel_2026.xlsx      (snapshot 1er jour o
 | `generate_dashboard_mensuel.py` | Dashboard web depuis l'historique | `dashboard_mensuel.html` |
 | `generate_objectifs.py` | Dashboard de suivi des objectifs d'équipe | `objectifs.html` |
 | `generate_pilotage.py` | Dashboard de pilotage annuel (tendances) | `pilotage.html` |
+| `generate_projections.py` | Analyse du backlog (composantes, jalons, phases) | `projections.html` |
 | `generate_previsionnel.py` | Prévisionnel pondéré du mois (par CP, par solution) | `previsionnel_2026.xlsx` |
 | `orchestration.py` | Détermine les actions selon la date (1er jour ouvré ?) | flags workflow |
 
@@ -147,6 +148,19 @@ Cibles modifiables dans `objectifs.xlsx` sans toucher au code.
 - **Clôtures** : projets + rework par mois
 - **Tableau récapitulatif annuel**
 
+### Analyse du backlog (`projections.html`)
+
+`generate_projections.py` lit la photo courante du backlog facturable
+(onglet `backlog_facturable`, régénéré à chaque run) :
+- **Composantes** : mobilisable (non bloqué) vs bloqué — montant + nb BDC, par solution
+- **Modèle de jalonnement** : rappel des 4 phases (Lancement & prérequis 0-10% /
+  Mise en service 10-20% / Paramétrage & recette 20-90% / PV signé 90-100%)
+- **Répartition par phase** : montant restant à reconnaître par phase, par solution
+
+Classement par **% d'avancement** (`customfield_21883`). Ancienneté basée sur la
+**date de création de l'épic parent**. Distinction Littéralis / GEODP partout.
+Photo temps réel, non accumulée.
+
 ## Fichiers de configuration
 
 | Fichier | Contenu | Publié ? |
@@ -196,7 +210,12 @@ Coller dans le Secret `ABSENCES_B64`. **À refaire chaque mois.** (Dans CMD, tap
 ### Lancer
 
 - **Manuel** : Actions → Pipeline mensuel → Run workflow
-- **Automatique** : cron quotidien 06:00 UTC (le 1er jour ouvré déclenche les étapes spéciales)
+- **Automatique** : un service externe (cron-job.org) appelle l'API `workflow_dispatch`
+  deux fois par jour, à **7h et 12h** (heure de Paris). Les `schedule: cron` de
+  GitHub Actions ont été retirés car trop peu fiables (retards de plusieurs heures
+  sur les comptes gratuits). Le 1er jour ouvré, l'orchestration interne déclenche
+  en plus le figement du mois précédent — c'est la **date** qui le commande, pas
+  l'appel externe.
 
 ---
 
