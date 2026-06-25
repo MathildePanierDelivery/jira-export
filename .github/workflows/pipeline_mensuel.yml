@@ -14,16 +14,24 @@ name: Pipeline mensuel
 on:
   workflow_dispatch:
     inputs:
-      mode:
-        description: 'Mode de lancement manuel'
+      action:
+        description: 'Action à réaliser'
         required: false
-        default: 'courant'
+        default: 'mois_courant'
         type: choice
-        options: [courant, precedent]
-  # Note : le déclenchement quotidien (7h et 12h, heure de Paris) est assuré
-  # par un service externe (cron-job.org) qui appelle l'API workflow_dispatch.
-  # Les schedule: cron de GitHub Actions sont trop peu fiables (retards de
-  # plusieurs heures sur les comptes gratuits) et ont été retirés.
+        options:
+          - mois_courant      # run normal (défaut, appelé par cron-job.org)
+          - figer_precedent   # MANUEL : figer le mois précédent (clôture)
+          - terminer_bascule  # MANUEL : lever le verrou, le mois courant reprend
+  # Le déclenchement quotidien (7h et 12h, heure de Paris) est assuré par un
+  # service externe (cron-job.org) qui appelle l'API workflow_dispatch avec
+  # l'action "mois_courant". Les schedule: cron de GitHub Actions ont été retirés
+  # (trop peu fiables : retards de plusieurs heures sur les comptes gratuits).
+  #
+  # BASCULE MENSUELLE (voir PROCESS_BASCULE.md) :
+  #   - Le 1er du mois, le verrou se pose tout seul → le mois courant se met en pause.
+  #   - Clôture : ajustements Jira → "figer_precedent" (manuel) → remise à zéro Jira.
+  #   - Puis "terminer_bascule" (manuel) → le mois courant reprend.
 
 permissions:
   contents: write
@@ -46,10 +54,17 @@ jobs:
       - name: Installer les dépendances
         run: pip install -r requirements.txt
 
-      # ── Déterminer la date : premier jour du mois ? ──
-      - name: Orchestration (analyse de la date)
+      # ── Gestion du verrou de bascule ──
+      # Si action = terminer_bascule : on lève le verrou (le mois courant reprend).
+      # Sinon : orchestration normale (pose le verrou le 1er, levée auto à 10j).
+      - name: Orchestration (verrou de bascule)
         id: orch
-        run: python orchestration.py
+        run: |
+          if [ "${{ github.event.inputs.action }}" = "terminer_bascule" ]; then
+            python orchestration.py --lever
+          else
+            python orchestration.py
+          fi
 
       - name: Restaurer absences_2026.xlsx
         env:
@@ -63,25 +78,28 @@ jobs:
           fi
 
       # ════════════════════════════════════════════════════════════
-      # BLOC 1 — Le 1er du mois UNIQUEMENT : figer le mois PRÉCÉDENT
+      # FIGER LE MOIS PRÉCÉDENT — MANUEL UNIQUEMENT (action figer_precedent)
+      # À lancer pendant la bascule, après les ajustements Jira, AVANT la RAZ.
       # ════════════════════════════════════════════════════════════
-      - name: "[1er du mois] Figer le mois précédent"
-        if: steps.orch.outputs.is_premier_jour_ouvre == 'true'
+      - name: "[Manuel] Figer le mois précédent"
+        if: github.event.inputs.action == 'figer_precedent'
         env:
           JIRA_URL:       ${{ secrets.JIRA_URL }}
           JIRA_EMAIL:     ${{ secrets.JIRA_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           TEMPO_TOKEN:    ${{ secrets.TEMPO_TOKEN }}
         run: |
-          echo "── Figement du mois précédent (mode precedent) ──"
+          echo "── Figement MANUEL du mois précédent ──"
           python collect_jira_worklogs.py --mois precedent --refresh
           python export_mensuel.py
           rm -f jira_cache.pkl
 
       # ════════════════════════════════════════════════════════════
-      # BLOC 2 — TOUS LES JOURS : le mois courant
+      # MOIS COURANT — sauf si une bascule est en cours (verrou posé)
+      # et sauf si l'action manuelle est figer_precedent.
       # ════════════════════════════════════════════════════════════
       - name: Collecter (mois courant)
+        if: steps.orch.outputs.bascule_en_cours != 'true' && github.event.inputs.action != 'figer_precedent'
         env:
           JIRA_URL:       ${{ secrets.JIRA_URL }}
           JIRA_EMAIL:     ${{ secrets.JIRA_EMAIL }}
@@ -90,17 +108,22 @@ jobs:
         run: python collect_jira_worklogs.py --mois courant --refresh
 
       - name: Contrôle de cohérence CA
+        if: steps.orch.outputs.bascule_en_cours != 'true' && github.event.inputs.action != 'figer_precedent'
         continue-on-error: true
         run: python controle_coherence_ca.py
 
       - name: Générer l'export + historique
+        if: steps.orch.outputs.bascule_en_cours != 'true' && github.event.inputs.action != 'figer_precedent'
         env:
           JIRA_URL: ${{ secrets.JIRA_URL }}
         run: python export_mensuel.py
 
-      # ── Le 1er du mois : capturer aussi le prévisionnel ──
-      - name: "[1er du mois] Capturer le prévisionnel"
-        if: steps.orch.outputs.is_premier_jour_ouvre == 'true'
+      # ── À la fin de bascule (terminer_bascule) : capturer le prévisionnel
+      #    du nouveau mois qui démarre (après la RAZ Jira). ──
+      - name: "[Fin de bascule] Capturer le prévisionnel"
+        if: github.event.inputs.action == 'terminer_bascule'
+        env:
+          JIRA_URL: ${{ secrets.JIRA_URL }}
         run: python generate_previsionnel.py
 
       - name: Générer le dashboard
@@ -140,6 +163,8 @@ jobs:
                    _historique.xlsx previsionnel_2026.xlsx; do
             [ -f "$f" ] && git add "$f" || true
           done
+          # Le verrou de bascule : git add -A pour capturer sa création ET sa suppression.
+          git add -A bascule_en_cours.flag 2>/dev/null || true
           git add jira_export_*.xlsx 2>/dev/null || true
 
           echo "── Fichiers en attente de commit ──"
