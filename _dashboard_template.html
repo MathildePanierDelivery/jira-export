@@ -175,6 +175,13 @@
   .stack-leg-item .sw { width: 11px; height: 11px; border-radius: 3px; }
 
   footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px; }
+  #tooltip { position: fixed; pointer-events: none; z-index: 100; background: var(--ink); color: #fff;
+    padding: 8px 12px; border-radius: 8px; font-size: 12.5px; line-height: 1.45;
+    box-shadow: 0 6px 20px rgba(0,0,0,.18); opacity: 0; transition: opacity .12s; white-space: nowrap; }
+  #tooltip.show { opacity: 1; }
+  #tooltip .tt-label { color: var(--muted-2, #9B9B96); font-size: 11px; }
+  #tooltip .tt-val { font-weight: 700; font-variant-numeric: tabular-nums; }
+  [data-tip] { cursor: pointer; }
 
   @media print {
     .selectors { display: none; }
@@ -197,6 +204,7 @@
 </header>
 
 <main id="app"><!-- rempli par JS --></main>
+<div id="tooltip"></div>
 
 <footer>Données issues du suivi de production · généré automatiquement</footer>
 
@@ -261,7 +269,7 @@ function stackedBars(rows, segLabels, maxVal) {
       if (v <= 0) return;
       const w = v / max * 100;
       segs += `<div class="stack-seg" style="width:${w}%;background:${segLabels[i].color}"
-        title="${segLabels[i].label}: ${Math.round(v)}h">${w > 8 ? Math.round(v)+'h' : ''}</div>`;
+        data-tip="${segLabels[i].label}|${Math.round(v)} h">${w > 8 ? Math.round(v)+'h' : ''}</div>`;
     });
     bars += `<div class="stack-row">
       <span class="stack-name">${row.name}</span>
@@ -343,6 +351,12 @@ function render() {
     };
     // une barre par solution, échelle commune = max des deux totaux
     const maxTotal = Math.max(anc.litt.total, anc.geodp.total, 1);
+    // Libellé affiché : ancienneté dans le passé (M0, M-1, M-2...).
+    // Les clés internes restent "M+0", "M+1"... pour ne pas casser les données.
+    const labelTranche = b => ({
+      'M+0':'M0', 'M+1':'M-1', 'M+2':'M-2', 'M+3':'M-3',
+      'M+4→6':'M-4→-6', 'M+7→12':'M-7→-12', 'M+13+':'M-13+'
+    }[b] || b);
     function ancBar(name, sol) {
       if (sol.total <= 0) return `<div class="stack-row">
         <span class="stack-name">${name}</span>
@@ -352,9 +366,9 @@ function render() {
         const nb = sol.nb[b];
         const pctTranche = Math.round(v / sol.total * 100);
         const w = v / maxTotal * 100;
-        const tip = `${b}\n${nb} BDC\n${pctTranche}% de la tranche\n${Math.round(v).toLocaleString('fr-FR')} €`;
+        const tip = `${labelTranche(b)}|${nb} BDC · ${pctTranche}% · ${Math.round(v).toLocaleString('fr-FR')} €`;
         return `<div class="stack-seg" style="width:${w}%;background:${ancColors[b]}"
-          title="${tip}">${w>7?b:''}</div>`;
+          data-tip="${tip}">${w>7?labelTranche(b):''}</div>`;
       }).join('');
       return `<div class="stack-row">
         <span class="stack-name">${name}</span>
@@ -363,7 +377,7 @@ function render() {
       </div>`;
     }
     const leg = anc.ordre.map(b =>
-      `<span class="stack-leg-item"><span class="sw" style="background:${ancColors[b]}"></span>${b}</span>`
+      `<span class="stack-leg-item"><span class="sw" style="background:${ancColors[b]}"></span>${labelTranche(b)}</span>`
     ).join('');
     html += `<div class="section"><div class="section-head">
       <h2>Ancienneté du CA déclaré</h2>
@@ -533,6 +547,30 @@ function initSelectors() {
 
 initSelectors();
 render();
+
+/* ── Infobulle interactive (identique au pilotage) ── */
+(function(){
+  const tip = document.getElementById('tooltip');
+  const app = document.getElementById('app');
+  app.addEventListener('mouseover', e => {
+    const el = e.target.closest('[data-tip]');
+    if (!el) return;
+    const [label, val] = el.getAttribute('data-tip').split('|');
+    tip.innerHTML = `<div class="tt-label">${label}</div><div class="tt-val">${val}</div>`;
+    tip.classList.add('show');
+  });
+  app.addEventListener('mousemove', e => {
+    if (!tip.classList.contains('show')) return;
+    let x = e.clientX + 14, y = e.clientY + 14;
+    const r = tip.getBoundingClientRect();
+    if (x + r.width > window.innerWidth) x = e.clientX - r.width - 14;
+    if (y + r.height > window.innerHeight) y = e.clientY - r.height - 14;
+    tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  });
+  app.addEventListener('mouseout', e => {
+    if (e.target.closest('[data-tip]')) tip.classList.remove('show');
+  });
+})();
 </script>
 </body>
 </html>
