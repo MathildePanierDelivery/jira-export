@@ -16,6 +16,7 @@ Sortie : objectifs.html
 
 import os
 import json
+from horodatage import maj_texte
 import pandas as pd
 
 HISTORIQUE_FILE = "_historique.xlsx"
@@ -122,7 +123,7 @@ def render():
         template = f.read()
 
     payload = {"objectifs": obj, "realise": realise}
-    return template.replace("__PAYLOAD__", json.dumps(payload, ensure_ascii=False))
+    return template.replace("__PAYLOAD__", json.dumps(payload, ensure_ascii=False)).replace("__MAJ__", maj_texte())
 
 
 if __name__ == "__main__":

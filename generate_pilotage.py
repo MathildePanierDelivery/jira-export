@@ -18,6 +18,7 @@ Sortie : pilotage.html
 """
 
 import json
+from horodatage import maj_texte
 import pandas as pd
 
 HISTORIQUE_FILE = "_historique.xlsx"
@@ -90,14 +91,17 @@ def build_data():
         "interne": [_num(v) for v in df_chg.get("Interne", [])] if not df_chg.empty else [],
     }
 
-    # 4. Backlog début de mois (sinon courant)
+    # 4. Backlog : photo début de mois si disponible pour le mois,
+    #    sinon valeur courante (total_backlog_TOTAL). Choix ligne par ligne
+    #    pour que les mois sans photo (passés) affichent quand même leur backlog.
+    backlog = []
     if not df_bl.empty:
-        if "backlog_debut_mois_TOTAL" in df_bl.columns and df_bl["backlog_debut_mois_TOTAL"].notna().any():
-            backlog = [_num(v) for v in df_bl["backlog_debut_mois_TOTAL"]]
-        else:
-            backlog = [_num(v) for v in df_bl.get("total_backlog_TOTAL", [])]
-    else:
-        backlog = []
+        a_debut = "backlog_debut_mois_TOTAL" in df_bl.columns
+        for _, r in df_bl.iterrows():
+            v = _num(r.get("backlog_debut_mois_TOTAL")) if a_debut else 0
+            if v == 0:  # photo absente pour ce mois → valeur courante
+                v = _num(r.get("total_backlog_TOTAL"))
+            backlog.append(v)
 
     # 5. Clôtures
     clot = {
@@ -124,7 +128,7 @@ def render():
     data = build_data()
     with open(TEMPLATE_FILE, encoding="utf-8") as f:
         template = f.read()
-    return template.replace("__DATA__", json.dumps(data, ensure_ascii=False))
+    return template.replace("__DATA__", json.dumps(data, ensure_ascii=False)).replace("__MAJ__", maj_texte())
 
 
 if __name__ == "__main__":

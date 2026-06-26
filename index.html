@@ -70,7 +70,7 @@
     <h1>Professional Services France</h1>
     <p>Tableaux de bord — mis à jour automatiquement (7h et 12h)</p>
   </div>
-  <div class="update-badge">⟳ Automatique · 7h et 12h</div>
+  <div class="update-badge" id="maj-badge">⟳ Automatique · 7h et 12h</div>
 </header>
 
 <main>
@@ -173,6 +173,12 @@ findLatestXlsx();
 // Détection du verrou de bascule : si bascule_en_cours.flag existe, afficher le bandeau.
 fetch('bascule_en_cours.flag', { method: 'HEAD', cache: 'no-store' })
   .then(r => { if (r.ok) document.getElementById('bascule-banner').style.display = 'block'; })
+  .catch(() => {});
+
+// Dernière mise à jour : lue depuis derniere_maj.txt (écrit par le pipeline).
+fetch('derniere_maj.txt', { cache: 'no-store' })
+  .then(r => r.ok ? r.text() : null)
+  .then(txt => { if (txt) document.getElementById('maj-badge').textContent = '⟳ ' + txt.trim(); })
   .catch(() => {});
 </script>
 

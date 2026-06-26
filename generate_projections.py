@@ -14,6 +14,7 @@ Sortie : projections.html
 """
 
 import json
+from horodatage import maj_texte
 import pandas as pd
 
 HISTORIQUE_FILE = "_historique.xlsx"
@@ -79,7 +80,7 @@ def render():
     data = build_data()
     with open(TEMPLATE_FILE, encoding="utf-8") as f:
         template = f.read()
-    return template.replace("__DATA__", json.dumps(data, ensure_ascii=False))
+    return template.replace("__DATA__", json.dumps(data, ensure_ascii=False)).replace("__MAJ__", maj_texte())
 
 
 if __name__ == "__main__":

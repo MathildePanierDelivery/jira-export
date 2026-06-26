@@ -14,6 +14,7 @@ Sortie : dashboard_mensuel.html
 import os
 import json
 import pandas as pd
+from horodatage import maj_texte
 
 HISTORIQUE_FILE = "_historique.xlsx"
 OUTPUT_HTML     = "dashboard_mensuel.html"
@@ -206,7 +207,8 @@ def render_html(data):
             .replace("__DATA__", json.dumps(data, ensure_ascii=False))
             .replace("__MOIS__", json.dumps(MOIS_FR, ensure_ascii=False))
             .replace("__DEF_ANNEE__", derniere_annee)
-            .replace("__DEF_MOIS__", dernier_mois))
+            .replace("__DEF_MOIS__", dernier_mois)
+            .replace("__MAJ__", maj_texte()))
 
 
 if __name__ == "__main__":
