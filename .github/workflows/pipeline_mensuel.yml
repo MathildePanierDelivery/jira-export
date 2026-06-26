@@ -139,6 +139,9 @@ jobs:
       - name: Générer l'analyse du backlog
         run: python generate_projections.py
 
+      - name: Horodatage de mise à jour
+        run: python -c "from horodatage import ecrire_fichier_maj; ecrire_fichier_maj()"
+
       # ── Nettoyer les fichiers sensibles AVANT publication ──
       - name: Supprimer les fichiers sensibles
         if: always()
@@ -161,7 +164,7 @@ jobs:
 
           # Ajouter uniquement les livrables présents (|| true par fichier).
           for f in dashboard_mensuel.html objectifs.html pilotage.html projections.html index.html \
-                   _historique.xlsx previsionnel_2026.xlsx; do
+                   _historique.xlsx previsionnel_2026.xlsx derniere_maj.txt; do
             [ -f "$f" ] && git add "$f" || true
           done
           # Le verrou de bascule : git add -A pour capturer sa création ET sa suppression.
