@@ -21,7 +21,7 @@ generate_dashboard_mensuel.py  →  dashboard_mensuel.html  (lit _historique.xls
 generate_objectifs.py      →  objectifs.html              (objectifs d'équipe)
 generate_pilotage.py       →  pilotage.html               (tendances annuelles)
 
-generate_previsionnel.py   →  previsionnel_2026.xlsx      (snapshot 1er jour ouvré)
+generate_previsionnel.py   →  previsionnel_2026.xlsx      (capturé en fin de bascule)
 ```
 
 ---
@@ -41,6 +41,7 @@ generate_previsionnel.py   →  previsionnel_2026.xlsx      (snapshot 1er jour o
 | `generate_previsionnel.py` | Prévisionnel pondéré du mois (par CP, par solution) | `previsionnel_2026.xlsx` |
 | `orchestration.py` | Gère le verrou de bascule mensuelle (pose le 1er, levée auto à 10j) | `bascule_en_cours.flag` |
 | `archiver_mois.py` | Archive l'export du mois figé dans `archives_mensuelles/` | `AAAA-MM_Mois.xlsx` |
+| `horodatage.py` | Horodatage « dernière mise à jour » (heure de Paris) | `derniere_maj.txt` |
 
 ### Pourquoi un collecteur séparé ?
 
@@ -88,18 +89,35 @@ Les worklogs sont saisis via **Tempo**, pas l'API Jira native (qui renvoie un co
 
 ---
 
-## Orchestration temporelle
+## Orchestration & bascule mensuelle
 
-`orchestration.py` détecte le **premier jour ouvré** du mois et pilote le workflow :
+Le pipeline est déclenché **deux fois par jour (7h et 12h, heure de Paris)** par un
+service externe (cron-job.org) qui appelle l'API `workflow_dispatch`. Les `schedule:
+cron` de GitHub Actions ont été retirés (trop peu fiables : retards de plusieurs heures).
 
-| Quand | Actions |
-|-------|---------|
-| **Chaque jour** | collecte courant → contrôle CA → export → historique → dashboards |
-| **1er jour ouvré (en plus)** | fige le mois précédent (mode `precedent`) + capture le prévisionnel |
+`orchestration.py` gère un **verrou de bascule** (`bascule_en_cours.flag`, fichier
+versionné dans le dépôt) :
 
-« 1er jour ouvré » = premier jour lun-ven non férié du mois (via `holidays.France`).
-Si le 1er tombe un week-end ou un férié, le déclenchement a lieu le 1er jour ouvré suivant.
-Le 1er jour ouvré, l'historique reçoit **deux lignes** : le mois précédent figé, et le mois courant créé.
+| Quand | Comportement |
+|-------|--------------|
+| **Chaque run (hors bascule)** | collecte courant → contrôle CA → export → historique → dashboards |
+| **1er du mois (calendaire)** | le verrou se **pose tout seul** → le mois courant se met en pause |
+| **Pendant la bascule** | les runs sautent le mois courant (rien n'est écrasé) |
+| **Levée du verrou** | manuelle (fin de bascule) ou **auto après 10 jours** (sécurité) |
+
+Le **figement du mois précédent** et la **fin de bascule** sont des actions **manuelles**
+(`workflow_dispatch` avec l'input `action`), car seul un humain sait quand Jira est prêt
+(ajustements faits, remise à zéro pas encore effectuée). Voir **`PROCESS_BASCULE.md`**
+pour la procédure détaillée.
+
+Les 3 actions du workflow :
+- `mois_courant` — run normal (défaut, appelé par cron-job.org)
+- `figer_precedent` — fige le mois écoulé + archive l'export dans `archives_mensuelles/`
+- `terminer_bascule` — lève le verrou, capture le prévisionnel, le mois courant reprend
+
+Un **bandeau** s'affiche sur la page d'accueil tant que la bascule est en cours.
+Chaque page porte un **horodatage** « Mise à jour le JJ/MM/AAAA à HH:MM » (heure de
+Paris, via `horodatage.py`).
 
 ---
 
@@ -210,13 +228,12 @@ Coller dans le Secret `ABSENCES_B64`. **À refaire chaque mois.** (Dans CMD, tap
 
 ### Lancer
 
-- **Manuel** : Actions → Pipeline mensuel → Run workflow
+- **Manuel** : Actions → Pipeline mensuel → Run workflow (choisir l'`action`)
 - **Automatique** : un service externe (cron-job.org) appelle l'API `workflow_dispatch`
-  deux fois par jour, à **7h et 12h** (heure de Paris). Les `schedule: cron` de
-  GitHub Actions ont été retirés car trop peu fiables (retards de plusieurs heures
-  sur les comptes gratuits). Le 1er jour ouvré, l'orchestration interne déclenche
-  en plus le figement du mois précédent — c'est la **date** qui le commande, pas
-  l'appel externe.
+  deux fois par jour, à **7h et 12h** (heure de Paris), avec l'action `mois_courant`.
+  Les `schedule: cron` de GitHub Actions ont été retirés (trop peu fiables).
+- **Bascule mensuelle** : le 1er du mois, le verrou se pose automatiquement ; le figement
+  du mois précédent et la fin de bascule sont **manuels** (voir `PROCESS_BASCULE.md`).
 
 ---
 
