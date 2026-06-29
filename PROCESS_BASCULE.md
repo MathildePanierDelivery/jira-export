@@ -50,9 +50,18 @@ Corriger dans Jira tout ce qui doit l'être sur le **mois qui vient de se termin
 
 ⚠️ **Ne pas encore faire la remise à zéro.** On fige d'abord.
 
+### 1 bis. Mettre à jour les absences du mois écoulé
+
+⚠️ **Important :** les arrêts maladie ne s'anticipent pas. Avant de figer, vérifier
+que `absences_2026.xlsx` contient bien **toutes** les absences réelles du mois écoulé
+(arrêts maladie imprévus, congés ajoutés en cours de mois...). Sinon la capacité
+productive du mois figé sera fausse.
+
+Si des absences ont changé, mettre à jour le Secret (voir [Mettre à jour les absences](#mettre-à-jour-les-absences) en bas de ce document).
+
 ### 2. Figer le mois précédent
 
-Une fois les ajustements terminés :
+Une fois les ajustements terminés **et les absences à jour** :
 
 1. Aller sur **GitHub → onglet Actions → "Pipeline mensuel"**
 2. Cliquer **"Run workflow"** (à droite)
@@ -79,6 +88,12 @@ Attendre que le run se termine (≈ 3-4 min), puis **vérifier** :
 **Seulement après que le figement est validé :**
 - Remettre le **« CA du mois en cours »** à 0.
 - Décaler les champs **prévisionnels** d'un mois.
+
+### 4 bis. Mettre à jour les absences du nouveau mois
+
+Préparer `absences_2026.xlsx` pour le **nouveau mois** qui démarre : congés connus,
+RTT, etc. (les absences se compléteront au fil du mois, mais autant partir avec ce
+qu'on sait). Mettre à jour le Secret (voir [Mettre à jour les absences](#mettre-à-jour-les-absences)).
 
 ### 5. Terminer la bascule
 
@@ -112,10 +127,37 @@ elles peuvent assurer la bascule en suivant ce document.
 
 ---
 
+## Mettre à jour les absences
+
+Le fichier `absences_2026.xlsx` (congés / maladie) ne peut **pas** être mis dans le
+dépôt (données sensibles). Il entre dans le pipeline via un **Secret GitHub** encodé.
+Quand les absences changent, il faut ré-encoder le fichier et mettre à jour le Secret :
+
+1. Ouvrir **PowerShell** (sous Windows ; dans CMD, taper d'abord `powershell`).
+2. Aller dans le dossier qui contient le fichier :
+   ```powershell
+   cd "C:\chemin\vers\le\dossier"
+   ```
+   *(astuce : taper `cd ` puis glisser-déposer le dossier dans la fenêtre pour coller le chemin. `dir` pour vérifier que `absences_2026.xlsx` est bien là.)*
+3. Encoder le fichier (le résultat est copié dans le presse-papier) :
+   ```powershell
+   [Convert]::ToBase64String([IO.File]::ReadAllBytes((Resolve-Path "absences_2026.xlsx"))) | Set-Clipboard
+   ```
+   *(le `Resolve-Path` évite une erreur « fichier introuvable » : sans lui, PowerShell
+   cherche parfois le fichier dans le mauvais dossier. Vérifier d'abord avec `dir absences_2026.xlsx`.)*
+4. Sur GitHub : **Settings → Secrets and variables → Actions → `ABSENCES_B64` → Update**,
+   coller, sauvegarder.
+
+Le prochain run utilisera les absences à jour.
+
+---
+
 ## Aide-mémoire express
 
 | Quand | Action |
 |---|---|
 | 1er du mois | *(rien — le verrou se pose seul)* |
+| Avant de figer | Vérifier/MAJ **absences du mois écoulé** (arrêts maladie !) |
 | Ajustements Jira finis | Run workflow → **`figer_precedent`** |
-| Figement vérifié + RAZ Jira faite | Run workflow → **`terminer_bascule`** |
+| Après RAZ Jira | MAJ **absences du nouveau mois** |
+| Figement vérifié + RAZ faite | Run workflow → **`terminer_bascule`** |

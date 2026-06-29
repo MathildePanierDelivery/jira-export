@@ -221,7 +221,7 @@ publication. L'export Excel publié ne contient **aucune** donnée RH nominative
 ### Encoder les absences (PowerShell)
 
 ```powershell
-[Convert]::ToBase64String([IO.File]::ReadAllBytes("absences_2026.xlsx")) | Set-Clipboard
+[Convert]::ToBase64String([IO.File]::ReadAllBytes((Resolve-Path "absences_2026.xlsx"))) | Set-Clipboard
 ```
 
 Coller dans le Secret `ABSENCES_B64`. **À refaire chaque mois.** (Dans CMD, taper `powershell` d'abord.)
