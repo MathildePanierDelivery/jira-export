@@ -167,8 +167,16 @@ jobs:
                    _historique.xlsx previsionnel_2026.xlsx derniere_maj.txt; do
             [ -f "$f" ] && git add "$f" || true
           done
-          # Le verrou de bascule : git add -A pour capturer sa création ET sa suppression.
-          git add -A bascule_en_cours.flag 2>/dev/null || true
+          # Le verrou de bascule : géré explicitement APRÈS le pull, car le
+          # stash/pull/pop peut restaurer le fichier depuis la version distante.
+          # - Si l'orchestration l'a supprimé (fin de bascule) → on force sa suppression.
+          # - Si l'orchestration l'a créé/maintenu (bascule en cours) → on l'ajoute.
+          if [ "${{ steps.orch.outputs.bascule_en_cours }}" = "true" ]; then
+            git add bascule_en_cours.flag 2>/dev/null || true
+          else
+            git rm --cached bascule_en_cours.flag 2>/dev/null || true
+            rm -f bascule_en_cours.flag
+          fi
           # Les archives mensuelles (exports figés, nommés AAAA-MM_Mois.xlsx).
           git add archives_mensuelles/*.xlsx 2>/dev/null || true
           git add jira_export_*.xlsx 2>/dev/null || true
