@@ -31,7 +31,29 @@ import sys
 from datetime import date, datetime
 
 VERROU_FILE = "bascule_en_cours.flag"
+DERNIERE_BASCULE_FILE = "derniere_bascule.txt"   # mois de la dernière bascule terminée (AAAA-MM)
 DELAI_LEVEE_AUTO = 10   # jours avant levée automatique de sécurité
+
+
+def _mois_courant_str(d=None):
+    d = d or date.today()
+    return d.strftime("%Y-%m")
+
+
+def _bascule_deja_faite(d=None):
+    """La bascule du mois de `d` a-t-elle déjà été terminée ?"""
+    if not os.path.exists(DERNIERE_BASCULE_FILE):
+        return False
+    try:
+        with open(DERNIERE_BASCULE_FILE, encoding="utf-8") as f:
+            return f.read().strip() == _mois_courant_str(d)
+    except Exception:
+        return False
+
+
+def _marquer_bascule_faite(d=None):
+    with open(DERNIERE_BASCULE_FILE, "w", encoding="utf-8") as f:
+        f.write(_mois_courant_str(d))
 
 
 def _lire_date_pose():
@@ -75,6 +97,8 @@ def main():
     # Mode "lever manuellement" (fin de bascule, déclenché par l'utilisateur)
     if "--lever" in sys.argv:
         lever_verrou("levée manuelle (fin de bascule)")
+        _marquer_bascule_faite()   # empêche le verrou de se reposer ce mois-ci
+        print(f"   → Bascule de {_mois_courant_str()} marquée comme terminée.")
         _ecrire_sortie(bascule_en_cours=False)
         return
 
@@ -83,12 +107,15 @@ def main():
     verrou_pose_ce_run = False
 
     if date_pose is None:
-        # Pas de verrou actuellement. Faut-il le poser ? Oui si on est le 1er du mois.
-        if d.day == 1:
+        # Pas de verrou actuellement. Faut-il le poser ?
+        # Oui si on est le 1er du mois ET que la bascule de ce mois n'a pas déjà été faite.
+        if d.day == 1 and not _bascule_deja_faite(d):
             poser_verrou(d)
             date_pose = d
             verrou_pose_ce_run = True
             print("   → 1er du mois : entrée en bascule mensuelle.")
+        elif d.day == 1 and _bascule_deja_faite(d):
+            print(f"📅 {d.isoformat()} : bascule de ce mois déjà terminée, run normal (mois courant).")
         else:
             print(f"📅 {d.isoformat()} : pas de bascule en cours, run normal (mois courant).")
     else:
