@@ -177,6 +177,8 @@ jobs:
             git rm --cached bascule_en_cours.flag 2>/dev/null || true
             rm -f bascule_en_cours.flag
           fi
+          # Le marqueur de dernière bascule terminée (empêche de reposer le verrou le même mois).
+          git add derniere_bascule.txt 2>/dev/null || true
           # Les archives mensuelles (exports figés, nommés AAAA-MM_Mois.xlsx).
           git add archives_mensuelles/*.xlsx 2>/dev/null || true
           git add jira_export_*.xlsx 2>/dev/null || true
