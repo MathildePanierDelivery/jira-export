@@ -151,33 +151,67 @@ SOLUTION_MAPPING = _SolutionMap()
 ABSENCES_FILE = "absences_2026.xlsx"
 
 OBJECTIFS_FILE   = "objectifs.xlsx"
-OBJECTIFS_ONGLET = "LE1"   # ← changer en "LE2" quand validé
+# Ordre de priorité : la dernière estimation prime. Pour chaque mois et chaque
+# solution, on prend LE2 si renseigné, sinon LE1, sinon Budget.
+OBJECTIFS_PRIORITE = ["LE2", "LE1", "Budget"]
 
-def load_objectifs(filepath, onglet, mois_label):
-    """Lit l'objectif du mois dans objectifs.xlsx (onglet LE1/LE2/Budget,
-       en-tête ligne 4). Retourne (global, littéralis, geodp) en €."""
-    if not os.path.exists(filepath):
-        print(f"⚠️  Fichier objectifs introuvable : {filepath} → objectifs à 0.")
-        return 0.0, 0.0, 0.0
+def _lire_onglet_objectifs(filepath, onglet, mois_label):
+    """Lit (global, litt, geodp) pour un mois dans un onglet donné.
+       Retourne None si l'onglet ou le mois est absent."""
     try:
         df_obj = pd.read_excel(filepath, sheet_name=onglet, header=3)
         ligne = df_obj[df_obj["Mois"] == mois_label]
         if ligne.empty:
-            print(f"⚠️  Mois '{mois_label}' absent de l'onglet {onglet} → objectifs à 0.")
-            return 0.0, 0.0, 0.0
+            return None
         row = ligne.iloc[0]
-        col_g = next((c for c in df_obj.columns if "global" in c.lower()), None)
-        col_l = next((c for c in df_obj.columns if "litt" in c.lower()), None)
+        col_g  = next((c for c in df_obj.columns if "global" in c.lower()), None)
+        col_l  = next((c for c in df_obj.columns if "litt" in c.lower()), None)
         col_ge = next((c for c in df_obj.columns if "geodp" in c.lower()), None)
-        g  = float(row[col_g])  if col_g  else 0.0
-        l  = float(row[col_l])  if col_l  else 0.0
-        ge = float(row[col_ge]) if col_ge else 0.0
-        print(f"✅ Objectifs {onglet} chargés pour {mois_label} : "
-              f"global {g:,.0f}€ (Litt {l:,.0f} / GEODP {ge:,.0f})")
-        return g, l, ge
-    except Exception as e:
-        print(f"⚠️  Lecture objectifs impossible : {e}. Objectifs à 0.")
+        def _v(col):
+            if not col:
+                return 0.0
+            try:
+                x = float(row[col])
+                return x if x == x else 0.0   # écarte NaN
+            except (ValueError, TypeError):
+                return 0.0
+        return _v(col_g), _v(col_l), _v(col_ge)
+    except Exception:
+        return None
+
+def load_objectifs(filepath, mois_label, priorite=OBJECTIFS_PRIORITE):
+    """Objectif du mois = la DERNIÈRE estimation disponible.
+       Pour chaque valeur (global/litt/geodp), on prend LE2 si renseigné (>0),
+       sinon LE1, sinon Budget. Le choix se fait valeur par valeur pour être
+       robuste aux onglets partiellement remplis."""
+    if not os.path.exists(filepath):
+        print(f"⚠️  Fichier objectifs introuvable : {filepath} → objectifs à 0.")
         return 0.0, 0.0, 0.0
+
+    # Lire les 3 onglets pour ce mois
+    lectures = {}
+    for onglet in priorite:
+        r = _lire_onglet_objectifs(filepath, onglet, mois_label)
+        if r is not None:
+            lectures[onglet] = r
+
+    if not lectures:
+        print(f"⚠️  Mois '{mois_label}' absent des onglets objectifs → objectifs à 0.")
+        return 0.0, 0.0, 0.0
+
+    # Pour chaque composante, prendre la première valeur > 0 dans l'ordre de priorité
+    def _choisir(idx):
+        for onglet in priorite:
+            if onglet in lectures and lectures[onglet][idx] > 0:
+                return lectures[onglet][idx], onglet
+        return 0.0, "—"
+
+    g, src_g   = _choisir(0)
+    l, src_l   = _choisir(1)
+    ge, src_ge = _choisir(2)
+    print(f"✅ Objectifs (dernière estimation) pour {mois_label} : "
+          f"global {g:,.0f}€ [{src_g}] · Litt {l:,.0f}€ [{src_l}] · GEODP {ge:,.0f}€ [{src_ge}]")
+    return g, l, ge
 
 def load_absences(filepath, mois_label):
     """Lit l'onglet du mois dans absences_2026.xlsx (un onglet par mois,
@@ -1625,8 +1659,8 @@ if not df_services.empty:
 else:
     ca_global = ca_litt = ca_geodp = 0
 
-# 2) Objectifs (LE1) du mois
-obj_global, obj_litt, obj_geodp = load_objectifs(OBJECTIFS_FILE, OBJECTIFS_ONGLET, mois_courant_label)
+# 2) Objectifs du mois (dernière estimation : LE2 > LE1 > Budget)
+obj_global, obj_litt, obj_geodp = load_objectifs(OBJECTIFS_FILE, mois_courant_label)
 
 # 3) Charge à date au prorata des jours ouvrés écoulés
 today_d = date.today()
