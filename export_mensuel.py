@@ -873,11 +873,119 @@ for wl in _cache["worklogs"]:
         "Ticket": tk,
         "Catégorie": cat,
         "Solution": sol,
+        "Epic": _epic or remonter_vers_epic(tk),
         "Temps (h)": wl["hours"],
         "Date": wl["date"],
     })
 
 df_wl = pd.DataFrame(wl_rows)
+
+
+# ══════════════════════════════════════════════════════════════════
+# ANALYSE DU TEMPS NON VALORISÉ (temps travaillé sans CA déclaré ce mois)
+# ══════════════════════════════════════════════════════════════════
+def _analyse_temps_non_valorise(df_wl):
+    """Décompose le temps productif du mois selon qu'il a généré du CA ou non.
+
+    Structure (heures, par solution LITTERALIS/GEODP) :
+      - rework            : temps sur épics Rework
+      - gratuit           : temps sur épics gratuits (presta offerte, etc.)
+      - projet_sans_ca    : temps sur projets qui n'ont PAS déclaré de CA ce mois
+          dont bloque / depasse / reste
+      - projet_avec_ca_perdu : heures bloquées/dépassées sur projets qui ONT déclaré du CA
+          dont bloque / depasse
+
+    Règle bloqué/dépassé : chaque heure bloquée/dépassée est rattachée à son épic ;
+    selon que l'épic a déclaré du CA ce mois ou non, elle va dans projet_sans_ca
+    (retranchée du "reste") ou dans projet_avec_ca_perdu.
+    """
+    SEC_PAR_H = 3600.0   # hypothèse : champs 27820/27853 en secondes (à valider au 1er run)
+
+    def _vide():
+        return {
+            "rework": 0.0, "gratuit": 0.0,
+            "projet_sans_ca_total": 0.0,
+            "sans_ca_bloque": 0.0, "sans_ca_depasse": 0.0, "sans_ca_reste": 0.0,
+            "avec_ca_bloque": 0.0, "avec_ca_depasse": 0.0,
+        }
+    res = {"LITTERALIS": _vide(), "GEODP": _vide()}
+
+    # 1) CA déclaré ce mois par épic (via le ticket Suivi CA de l'épic)
+    ca_par_epic = {}   # epic_key -> CA du mois
+    for k, info in _cache["issues_by_key"].items():
+        if info.get("issuetype") != "COORDIN : Suivi CA":
+            continue
+        epic = remonter_vers_epic(k)
+        ca_mois = float(info["raw_fields"].get("customfield_22998") or 0)
+        ca_par_epic[epic] = ca_par_epic.get(epic, 0) + ca_mois
+
+    def _a_declare_ca(epic):
+        return ca_par_epic.get(epic, 0) > 0
+
+    # 2) Temps bloqué/dépassé par épic (somme des tickets COORDIN : Paramétrages)
+    bloque_par_epic = {}
+    depasse_par_epic = {}
+    for k, info in _cache["issues_by_key"].items():
+        if info.get("issuetype") != "COORDIN : Paramétrages":
+            continue
+        epic = remonter_vers_epic(k)
+        raw = info["raw_fields"]
+        b = float(raw.get("customfield_27820") or 0) / SEC_PAR_H
+        d = float(raw.get("customfield_27853") or 0) / SEC_PAR_H
+        bloque_par_epic[epic]  = bloque_par_epic.get(epic, 0) + b
+        depasse_par_epic[epic] = depasse_par_epic.get(epic, 0) + d
+
+    # 3) Répartir le temps productif (worklogs) par catégorie et valorisation
+    if df_wl is not None and not df_wl.empty:
+        for _, r in df_wl.iterrows():
+            sol = r["Solution"]
+            if sol not in res:
+                continue
+            cat = r["Catégorie"]
+            h = float(r["Temps (h)"] or 0)
+            if cat == "Rework":
+                res[sol]["rework"] += h
+            elif cat in ("Prestation offerte", "Commande sans prestation", "Maintenance"):
+                res[sol]["gratuit"] += h
+            elif cat == "Projet":
+                epic = r["Epic"]
+                if not _a_declare_ca(epic):
+                    # projet sans CA déclaré ce mois → temps non valorisé
+                    res[sol]["projet_sans_ca_total"] += h
+
+    # 4) Ventiler bloqué/dépassé selon valorisation de l'épic
+    def _sol_epic(epic):
+        return _solution_de_ticket(epic) or ""
+    for epic, b in bloque_par_epic.items():
+        sol = _sol_epic(epic)
+        if sol not in res or b <= 0:
+            continue
+        if _a_declare_ca(epic):
+            res[sol]["avec_ca_bloque"] += b
+        else:
+            res[sol]["sans_ca_bloque"] += b
+    for epic, d in depasse_par_epic.items():
+        sol = _sol_epic(epic)
+        if sol not in res or d <= 0:
+            continue
+        if _a_declare_ca(epic):
+            res[sol]["avec_ca_depasse"] += d
+        else:
+            res[sol]["sans_ca_depasse"] += d
+
+    # 5) Calculer le "reste à expliquer" = projet_sans_ca - bloqué - dépassé (plancher 0)
+    for sol in res:
+        d = res[sol]
+        reste = d["projet_sans_ca_total"] - d["sans_ca_bloque"] - d["sans_ca_depasse"]
+        d["sans_ca_reste"] = max(0.0, round(reste, 2))
+        # arrondis
+        for key in d:
+            d[key] = round(d[key], 2)
+    return res
+
+
+# (l'appel à _analyse_temps_non_valorise est fait plus bas, une fois toutes
+#  les fonctions dépendantes définies)
 
 # Diagnostic : totaux par catégorie et par solution (pour validation)
 if not df_wl.empty:
@@ -1844,6 +1952,10 @@ try:
                 "CA reconnu ce mois (€)": "",
             })
 
+    # Analyse du temps non valorisé (toutes les fonctions dépendantes sont
+    # maintenant définies : _solution_de_ticket, remonter_vers_epic...).
+    analyse_nv = _analyse_temps_non_valorise(df_wl)
+
     contexte = {
         "mois_label": mois_courant_label, "annee": month_start.year,
         "ca_global": float(ca_global), "ca_litt": float(ca_litt), "ca_geodp": float(ca_geodp),
@@ -1868,6 +1980,7 @@ try:
         },
         "backlog_anciennete": _backlog_par_tranche(df_bl),
         "backlog_facturable": _backlog_facturable_analyse(df_bl),
+        "temps_non_valorise": analyse_nv,
         "commandes_lignes": commandes_lignes,
         "ca_deal_lignes": ca_deal_lignes,
         "anciennete_lignes": anciennete_lignes,

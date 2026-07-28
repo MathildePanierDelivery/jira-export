@@ -217,6 +217,42 @@ def maj_historique(contexte):
             "dont Rework": clot["nb_rework_clotures"],
         }, hc)
 
+    # ── Onglet temps_non_valorise (accumulé par mois × solution) ──
+    tnv = contexte.get("temps_non_valorise")
+    if tnv:
+        if "temps_non_valorise" not in wb.sheetnames:
+            wst = wb.create_sheet("temps_non_valorise")
+            wst.append(["Mois", "Année", "Solution", "Rework", "Gratuit",
+                        "Projet sans CA", "dont Bloqué", "dont Dépassé", "dont Reste",
+                        "Projet avec CA - Bloqué", "Projet avec CA - Dépassé"])
+        else:
+            wst = wb["temps_non_valorise"]
+        h_t = [wst.cell(1, c).value for c in range(1, wst.max_column + 1)]
+        for sol in ["LITTERALIS", "GEODP"]:
+            d = tnv[sol]
+            cle = {"Mois": mois, "Année": annee, "Solution": sol}
+            vals = {
+                "Rework": d["rework"], "Gratuit": d["gratuit"],
+                "Projet sans CA": d["projet_sans_ca_total"],
+                "dont Bloqué": d["sans_ca_bloque"], "dont Dépassé": d["sans_ca_depasse"],
+                "dont Reste": d["sans_ca_reste"],
+                "Projet avec CA - Bloqué": d["avec_ca_bloque"],
+                "Projet avec CA - Dépassé": d["avec_ca_depasse"],
+            }
+            # upsert sur clé (Mois, Année, Solution)
+            trouve = False
+            for r in range(2, wst.max_row + 1):
+                if (wst.cell(r, 1).value == mois and wst.cell(r, 2).value == annee
+                        and wst.cell(r, 3).value == sol):
+                    for col, v in vals.items():
+                        if col in h_t:
+                            wst.cell(r, h_t.index(col) + 1).value = v
+                    trouve = True
+                    break
+            if not trouve:
+                row = [mois, annee, sol] + [vals.get(c, "") for c in h_t[3:]]
+                wst.append(row)
+
     # ── Onglet backlog_facturable (photo COURANTE : composantes + phases + blocages) ──
     bl_fact = contexte.get("backlog_facturable")
     if bl_fact:
