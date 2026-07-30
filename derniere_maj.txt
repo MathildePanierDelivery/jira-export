@@ -1,1 +1,5 @@
+<<<<<<< Updated upstream
 Mise à jour le 30/07/2026 à 16:04
+=======
+Mise à jour le 30/07/2026 à 16:07
+>>>>>>> Stashed changes
