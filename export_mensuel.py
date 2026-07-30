@@ -946,7 +946,7 @@ def _analyse_temps_non_valorise(df_wl):
             h = float(r["Temps (h)"] or 0)
             if cat == "Rework":
                 res[sol]["rework"] += h
-            elif cat in ("Prestation offerte", "Commande sans prestation", "Maintenance"):
+            elif cat in ("Prestation offerte", "Commande sans prestation", "Maintenance", "Assistance Expert"):
                 res[sol]["gratuit"] += h
             elif cat == "Projet":
                 epic = r["Epic"]
@@ -1296,7 +1296,7 @@ cap_par_sol = {"LITTERALIS": _cap_solution("LITTERALIS"), "GEODP": _cap_solution
 # Catégories regroupées
 CAT_PROJET  = {"Projet"}
 CAT_REWORK  = {"Rework"}
-CAT_GRATUIT = {"Prestation offerte", "Commande sans prestation", "Maintenance"}
+CAT_GRATUIT = {"Prestation offerte", "Commande sans prestation", "Maintenance", "Assistance Expert"}
 CAT_SUPPORT = {"Support N2"}
 
 def _h(df, sol, cats):
@@ -1381,7 +1381,7 @@ def _composante_de_categorie(cat):
     """Regroupe la catégorie d'épic en 3 composantes du backlog."""
     if cat in ("Rework",):
         return "Rework"
-    if cat in ("Prestation offerte", "Commande sans prestation", "Maintenance"):
+    if cat in ("Prestation offerte", "Commande sans prestation", "Maintenance", "Assistance Expert"):
         return "Prestations gratuites"
     return "Facturable"
 
@@ -1781,7 +1781,7 @@ charge_reelle = df_wl["Temps (h)"].sum() if not df_wl.empty else 0
 pct_charge = round(charge_reelle / cap_attendue_a_date * 100, 1) if cap_attendue_a_date > 0 else 0
 
 # 4) Projets / Rework ouverts à date (comptage local depuis le cache)
-TYPES_PRODUCTIFS = {"Projet", "Prestation offerte", "Commande sans prestation", "Maintenance", "Rework"}
+TYPES_PRODUCTIFS = {"Projet", "Prestation offerte", "Commande sans prestation", "Maintenance", "Rework", "Assistance Expert"}
 STATUTS_CLOS = {"Terminé", "Terminée", "Done", "Clôturé", "Fermé", "Annulé", "Abandonné"}
 nb_proj_ouverts = nb_rew_ouverts = 0
 for k, info in _cache["issues_by_key"].items():
