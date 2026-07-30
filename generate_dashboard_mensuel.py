@@ -44,6 +44,7 @@ def build_data():
     df_bl     = pd.read_excel(xls, "backlog")   if "backlog" in xls.sheet_names else pd.DataFrame()
     df_clot   = pd.read_excel(xls, "clotures")  if "clotures" in xls.sheet_names else pd.DataFrame()
     df_anc    = pd.read_excel(xls, "anciennete") if "anciennete" in xls.sheet_names else pd.DataFrame()
+    df_tnv    = pd.read_excel(xls, "temps_non_valorise") if "temps_non_valorise" in xls.sheet_names else pd.DataFrame()
 
     data = {}
 
@@ -190,6 +191,30 @@ def build_data():
                 "total": total_global,
                 "ordre": BUCKETS,
             }
+
+    # ── Temps non valorisé (par mois × solution) ──
+    for _, r in df_tnv.iterrows():
+        mois, annee = r.get("Mois"), r.get("Année")
+        if pd.isna(mois) or pd.isna(annee):
+            continue
+        sol = r.get("Solution")
+        if sol not in ("LITTERALIS", "GEODP"):
+            continue
+        def _n(col):
+            v = r.get(col)
+            try:
+                return round(float(v), 2) if not pd.isna(v) else 0.0
+            except (ValueError, TypeError):
+                return 0.0
+        s = slot(annee, mois).setdefault("tnv", {})
+        s[sol] = {
+            "rework": _n("Rework"), "gratuit": _n("Gratuit"),
+            "projet_sans_ca": _n("Projet sans CA"),
+            "sans_ca_bloque": _n("dont Bloqué"), "sans_ca_depasse": _n("dont Dépassé"),
+            "sans_ca_reste": _n("dont Reste"),
+            "avec_ca_bloque": _n("Projet avec CA - Bloqué"),
+            "avec_ca_depasse": _n("Projet avec CA - Dépassé"),
+        }
 
     return data
 
