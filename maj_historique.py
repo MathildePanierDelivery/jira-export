@@ -230,7 +230,6 @@ def maj_historique(contexte):
         h_t = [wst.cell(1, c).value for c in range(1, wst.max_column + 1)]
         for sol in ["LITTERALIS", "GEODP"]:
             d = tnv[sol]
-            cle = {"Mois": mois, "Année": annee, "Solution": sol}
             vals = {
                 "Rework": d["rework"], "Gratuit": d["gratuit"],
                 "Projet sans CA": d["projet_sans_ca_total"],
