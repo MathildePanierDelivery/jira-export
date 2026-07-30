@@ -899,7 +899,8 @@ def _analyse_temps_non_valorise(df_wl):
     selon que l'épic a déclaré du CA ce mois ou non, elle va dans projet_sans_ca
     (retranchée du "reste") ou dans projet_avec_ca_perdu.
     """
-    SEC_PAR_H = 3600.0   # hypothèse : champs 27820/27853 en secondes (à valider au 1er run)
+    # Les champs 27820/27853 sont déjà exprimés EN HEURES (pas en secondes).
+    SEC_PAR_H = 1.0
 
     def _vide():
         return {
