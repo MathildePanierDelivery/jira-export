@@ -139,6 +139,9 @@ jobs:
       - name: Générer l'analyse du backlog
         run: python generate_projections.py
 
+      - name: Générer l'analyse de l'écart de CA
+        run: python generate_analyse_ecart.py
+
       - name: Horodatage de mise à jour
         run: python -c "from horodatage import ecrire_fichier_maj; ecrire_fichier_maj()"
 
@@ -163,7 +166,7 @@ jobs:
           git stash pop 2>/dev/null || true
 
           # Ajouter uniquement les livrables présents (|| true par fichier).
-          for f in dashboard_mensuel.html objectifs.html pilotage.html projections.html index.html \
+          for f in dashboard_mensuel.html objectifs.html pilotage.html projections.html analyse_ecart.html index.html \
                    _historique.xlsx previsionnel_2026.xlsx derniere_maj.txt; do
             [ -f "$f" ] && git add "$f" || true
           done
