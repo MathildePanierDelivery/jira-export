@@ -264,14 +264,19 @@ def maj_historique(contexte):
                   "Paramétrage & recette", "PV signé"]
         blocages = ["Aucun", "Blocage client", "Blocage produit",
                     "Blocage commerce", "Autre"]
+        tranches_deb = ["Ce mois", "1-3 mois", "Au-delà", "Sans date"]
         # En-tête : une ligne par solution, colonnes = indicateurs
         cols = (["Solution", "Date photo", "Total", "Mobilisable", "Bloqué",
                  "Temps total", "Temps mobilisable", "Temps bloqué",
                  "Nb", "Nb mobilisable", "Nb bloqué"]
                 + [f"Phase: {p}" for p in phases]
                 + [f"NbPhase: {p}" for p in phases]
+                + [f"PhaseMob: {p}" for p in phases]
+                + [f"PhaseBloq: {p}" for p in phases]
                 + [f"Bloc: {b}" for b in blocages]
-                + [f"NbBloc: {b}" for b in blocages])
+                + [f"NbBloc: {b}" for b in blocages]
+                + [f"Deb€: {t}" for t in tranches_deb]
+                + [f"DebNb: {t}" for t in tranches_deb])
         wsf.append(cols)
         for sol in ["LITTERALIS", "GEODP"]:
             d = bl_fact[sol]
@@ -281,8 +286,12 @@ def maj_historique(contexte):
                    d["nb"], d["nb_mobilisable"], d["nb_bloque"]]
             row += [round(d["par_phase"][p], 2) for p in phases]
             row += [d["nb_par_phase"][p] for p in phases]
+            row += [round(d["phase_mobilisable"][p], 2) for p in phases]
+            row += [round(d["phase_bloque"][p], 2) for p in phases]
             row += [round(d["par_blocage"][b], 2) for b in blocages]
             row += [d["nb_par_blocage"][b] for b in blocages]
+            row += [round(d["deblocage_montant"][t], 2) for t in tranches_deb]
+            row += [d["deblocage_nb"][t] for t in tranches_deb]
             wsf.append(row)
 
     # ── Onglet backlog_anciennete (photo COURANTE du backlog par tranche × solution) ──

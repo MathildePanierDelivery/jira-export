@@ -87,6 +87,7 @@ JIRA_FIELDS = [
     "customfield_26148",   # Temps passé bloqué
     "customfield_26606",   # Temps passé dépassé
     "customfield_26672",   # Détail blocage
+    "customfield_26845",   # Date de déblocage estimée
     "customfield_26878",   # Service responsable (qui bloque)
     "customfield_27820",   # Temps passé BLOQUÉ mensuel (RAZ chaque mois)
     "customfield_27853",   # Temps passé DÉPASSÉ mensuel (RAZ chaque mois)

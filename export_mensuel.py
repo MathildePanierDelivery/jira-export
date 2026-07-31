@@ -1438,11 +1438,29 @@ for k, info in _cache["issues_by_key"].items():
             anc_mois = (date.today().year - cd.year) * 12 + (date.today().month - cd.month)
         except Exception:
             anc_mois = None
+    # Date de déblocage estimée (champ 26845) → tranche relative
+    deb_raw = raw.get("customfield_26845")
+    deblocage_tranche = None   # None = pas bloqué ou sans date
+    if blocage != "Aucun":
+        deblocage_tranche = "Sans date"   # bloqué mais pas de date par défaut
+        if deb_raw:
+            try:
+                dd = pd.to_datetime(deb_raw).date()
+                delta_j = (dd - date.today()).days
+                if delta_j <= 31:
+                    deblocage_tranche = "Ce mois"
+                elif delta_j <= 92:
+                    deblocage_tranche = "1-3 mois"
+                else:
+                    deblocage_tranche = "Au-delà"
+            except Exception:
+                deblocage_tranche = "Sans date"
     backlog_rows.append({"ticket": k, "solution": sol,
                          "montant": montant, "blocage": blocage,
                          "composante": composante, "phase": phase,
                          "jalon_pct": jalon_pct, "temps_restant": temps_restant,
-                         "anciennete_mois": anc_mois})
+                         "anciennete_mois": anc_mois,
+                         "deblocage_tranche": deblocage_tranche})
 
 df_bl = pd.DataFrame(backlog_rows)
 
@@ -1457,6 +1475,7 @@ def _backlog_facturable_analyse(df):
               "Paramétrage & recette", "PV signé"]
     blocages = ["Aucun", "Blocage client", "Blocage produit",
                 "Blocage commerce", "Autre"]
+    tranches_deb = ["Ce mois", "1-3 mois", "Au-delà", "Sans date"]
 
     def _vide():
         return {
@@ -1465,8 +1484,14 @@ def _backlog_facturable_analyse(df):
             "nb": 0, "nb_mobilisable": 0, "nb_bloque": 0,
             "par_phase": {p: 0.0 for p in phases},
             "nb_par_phase": {p: 0 for p in phases},
+            # bloqué/mobilisable par phase (montant)
+            "phase_mobilisable": {p: 0.0 for p in phases},
+            "phase_bloque": {p: 0.0 for p in phases},
             "par_blocage": {b: 0.0 for b in blocages},
             "nb_par_blocage": {b: 0 for b in blocages},
+            # échéancier de déblocage (montant + nb) du backlog bloqué
+            "deblocage_montant": {t: 0.0 for t in tranches_deb},
+            "deblocage_nb": {t: 0 for t in tranches_deb},
         }
 
     res = {"LITTERALIS": _vide(), "GEODP": _vide()}
@@ -1490,15 +1515,25 @@ def _backlog_facturable_analyse(df):
             d["bloque"] += m; d["temps_bloque"] += t; d["nb_bloque"] += 1
         else:
             d["mobilisable"] += m; d["temps_mobilisable"] += t; d["nb_mobilisable"] += 1
-        # par phase
+        # par phase (+ split bloqué/mobilisable)
         ph = r["phase"]
         if ph in d["par_phase"]:
             d["par_phase"][ph] += m
             d["nb_par_phase"][ph] += 1
+            if bloque:
+                d["phase_bloque"][ph] += m
+            else:
+                d["phase_mobilisable"][ph] += m
         # par blocage
         bl = r["blocage"] if r["blocage"] in blocages else "Autre"
         d["par_blocage"][bl] += m
         d["nb_par_blocage"][bl] += 1
+        # échéancier de déblocage (uniquement le bloqué)
+        if bloque:
+            tr = r.get("deblocage_tranche") or "Sans date"
+            if tr in d["deblocage_montant"]:
+                d["deblocage_montant"][tr] += m
+                d["deblocage_nb"][tr] += 1
     return res
 
 
