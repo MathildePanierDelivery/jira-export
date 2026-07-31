@@ -917,14 +917,24 @@ def _analyse_temps_non_valorise(df_wl):
     res = {"LITTERALIS": _vide(), "GEODP": _vide()}
 
     # Avancement (%) par épic, pour ventiler par phase
-    def _avancement_epic(epic):
-        info = _cache["issues_by_key"].get(epic, {})
-        raw = info.get("raw_fields", {})
-        v = raw.get("customfield_21883")
+    # Avancement (%) par épic : lu sur le ticket "COORDIN : Suivi CA" du projet
+    # (c'est là qu'est porté customfield_21883, pas sur l'épic parent).
+    avancement_par_epic = {}
+    for k, info in _cache["issues_by_key"].items():
+        if info.get("issuetype") != "COORDIN : Suivi CA":
+            continue
+        epic = remonter_vers_epic(k)
+        v = info["raw_fields"].get("customfield_21883")
         try:
-            return float(v) if v not in (None, "") else None
+            pct = float(v) if v not in (None, "") else None
         except (ValueError, TypeError):
-            return None
+            pct = None
+        if pct is not None:
+            # si plusieurs tickets Suivi CA sous un épic, garder le plus avancé
+            avancement_par_epic[epic] = max(avancement_par_epic.get(epic, 0), pct)
+
+    def _avancement_epic(epic):
+        return avancement_par_epic.get(epic)
 
     # 1) CA déclaré ce mois par épic (via le ticket Suivi CA de l'épic)
     ca_par_epic = {}   # epic_key -> CA du mois
