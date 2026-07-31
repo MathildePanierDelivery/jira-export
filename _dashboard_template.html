@@ -330,35 +330,41 @@ function renderTempsNonValorise(tnv) {
   const litt = tnv.LITTERALIS, geodp = tnv.GEODP;
   if (!litt && !geodp) return '';  // pas de données pour ce mois (mois anciens)
 
-  // Total non valorisé (rework + gratuit + projet sans CA) par solution et global
-  const totNV = s => s ? (s.rework + s.gratuit + s.projet_sans_ca) : 0;
-  const nvLitt = totNV(litt), nvGeodp = totNV(geodp), nvGlobal = nvLitt + nvGeodp;
+  // Valeurs combinées par solution : bloqué et dépassé TOTAUX (avec + sans CA).
+  // Le "reste à expliquer" ne retranche que le sans-CA (le seul contenu dans
+  // "projet sans CA"), donc le bloqué/dépassé avec-CA vient s'ajouter au total.
+  function prep(s) {
+    if (!s) return null;
+    const bloque  = (s.sans_ca_bloque  || 0) + (s.avec_ca_bloque  || 0);
+    const depasse = (s.sans_ca_depasse || 0) + (s.avec_ca_depasse || 0);
+    const reste   = s.sans_ca_reste || 0;
+    return {
+      rework: s.rework || 0,
+      gratuit: s.gratuit || 0,
+      bloque, depasse, reste,
+      total: (s.rework||0) + (s.gratuit||0) + bloque + depasse + reste,
+    };
+  }
+  const L = prep(litt), G = prep(geodp);
+  const totL = L ? L.total : 0, totG = G ? G.total : 0, totGlobal = totL + totG;
 
-  // Heures perdues sur projet AVEC CA (bloqué + dépassé) — encart séparé
-  const perduAvecCA = s => s ? (s.avec_ca_bloque + s.avec_ca_depasse) : 0;
-  const paLitt = perduAvecCA(litt), paGeodp = perduAvecCA(geodp);
-  const paGlobal = paLitt + paGeodp;
-
-  // Segments de la décomposition (ordre + couleurs)
   const SEGS = [
-    {key:'rework',         label:'Rework',              color:'#993C1D'},
-    {key:'gratuit',        label:'Prestations offertes', color:'#B5740F'},
-    {key:'sans_ca_bloque', label:'Bloqué (sans CA)',    color:'#7A5CA8'},
-    {key:'sans_ca_depasse',label:'Dépassé (sans CA)',   color:'#B08D57'},
-    {key:'sans_ca_reste',  label:'Reste à expliquer',   color:'#9B9B96'},
+    {key:'rework',  label:'Rework',               color:'#993C1D'},
+    {key:'gratuit', label:'Prestations offertes', color:'#B5740F'},
+    {key:'bloque',  label:'Bloqué',               color:'#7A5CA8'},
+    {key:'depasse', label:'Dépassé',              color:'#B08D57'},
+    {key:'reste',   label:'Reste à expliquer',    color:'#9B9B96'},
   ];
 
-  // Barre empilée pour une solution
-  const maxTot = Math.max(nvLitt, nvGeodp, 1);
-  function bar(name, cls, s) {
-    if (!s) return '';
-    const tot = totNV(s);
-    if (tot <= 0) return `<div class="tnv-row">
+  const maxTot = Math.max(totL, totG, 1);
+  function bar(name, cls, p) {
+    if (!p) return '';
+    if (p.total <= 0) return `<div class="tnv-row">
       <span class="tnv-name ${cls}">${name}</span>
       <div class="tnv-track"></div><span class="tnv-tot">0 h</span></div>`;
     let segs = '';
     for (const sg of SEGS) {
-      const v = s[sg.key] || 0;
+      const v = p[sg.key] || 0;
       if (v <= 0) continue;
       const w = v / maxTot * 100;
       segs += `<div class="tnv-seg" style="width:${w}%;background:${sg.color}"
@@ -367,47 +373,29 @@ function renderTempsNonValorise(tnv) {
     return `<div class="tnv-row">
       <span class="tnv-name ${cls}">${name}</span>
       <div class="tnv-track">${segs}</div>
-      <span class="tnv-tot">${hh(tot)}</span></div>`;
+      <span class="tnv-tot">${hh(p.total)}</span></div>`;
   }
 
-  // Légende
   const leg = SEGS.map(sg =>
     `<span class="tnv-leg"><span class="sw" style="background:${sg.color}"></span>${sg.label}</span>`
   ).join('');
 
-  let html = `<div class="section"><div class="section-head">
+  return `<div class="section"><div class="section-head">
     <h2>Temps non valorisé</h2>
     <span class="note">temps travaillé sans CA déclaré ce mois</span></div>
     <div class="grid grid-3" style="margin-bottom:14px">
       <div class="card"><div class="label">Total non valorisé</div>
-        <div class="value">${hh(nvGlobal)}</div><div class="sub">rework + gratuit + projet sans CA</div></div>
+        <div class="value">${hh(totGlobal)}</div><div class="sub">rework · gratuit · bloqué · dépassé · reste</div></div>
       <div class="card"><div class="label">Littéralis</div>
-        <div class="value litt">${hh(nvLitt)}</div><div class="sub">&nbsp;</div></div>
+        <div class="value litt">${hh(totL)}</div><div class="sub">&nbsp;</div></div>
       <div class="card"><div class="label">GEODP</div>
-        <div class="value geodp">${hh(nvGeodp)}</div><div class="sub">&nbsp;</div></div>
+        <div class="value geodp">${hh(totG)}</div><div class="sub">&nbsp;</div></div>
     </div>
     <div class="card">
-      ${bar('Littéralis','tag-litt',litt)}
-      ${bar('GEODP','tag-geodp',geodp)}
+      ${bar('Littéralis','tag-litt',L)}
+      ${bar('GEODP','tag-geodp',G)}
       <div class="tnv-legend">${leg}</div>
-    </div>`;
-
-  // Encart séparé : heures perdues sur projet AVEC CA déclaré
-  if (paGlobal > 0) {
-    html += `<div class="card" style="margin-top:14px;background:var(--bad-bg);border-color:#E8C9BC">
-      <div class="label" style="color:var(--bad)">Heures perdues sur projets facturés</div>
-      <div class="note" style="margin:4px 0 10px">bloqué / dépassé sur des projets qui ont déclaré du CA ce mois — perdues malgré la facturation</div>
-      <div class="grid grid-3">
-        <div><span class="tag-litt">Littéralis</span> : <strong>${hh(paLitt)}</strong>
-          ${litt ? `<span class="sub">(bloqué ${hh(litt.avec_ca_bloque)} · dépassé ${hh(litt.avec_ca_depasse)})</span>` : ''}</div>
-        <div><span class="tag-geodp">GEODP</span> : <strong>${hh(paGeodp)}</strong>
-          ${geodp ? `<span class="sub">(bloqué ${hh(geodp.avec_ca_bloque)} · dépassé ${hh(geodp.avec_ca_depasse)})</span>` : ''}</div>
-        <div>Total : <strong>${hh(paGlobal)}</strong></div>
-      </div></div>`;
-  }
-
-  html += `</div>`;
-  return html;
+    </div></div>`;
 }
 
 function render() {
