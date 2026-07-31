@@ -326,7 +326,7 @@ function vsCard(label, ca, cmd) {
 }
 
 function renderTempsNonValorise(tnv) {
-  const hh = n => (n||0).toLocaleString('fr-FR', {maximumFractionDigits:1}) + ' h';
+  const hh = n => (n||0).toLocaleString('fr-FR', {maximumFractionDigits:2}) + ' h';
   const litt = tnv.LITTERALIS, geodp = tnv.GEODP;
   if (!litt && !geodp) return '';  // pas de données pour ce mois (mois anciens)
 
