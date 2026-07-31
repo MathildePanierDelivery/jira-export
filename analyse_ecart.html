@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analyse de l'écart de CA — PS France</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F8F8F6; --surface: #FFFFFF; --border: #E8E6E0;
+    --ink: #1A1A18; --muted: #6B6B67; --muted-2: #9B9B96;
+    --litt: #185FA5; --geodp: #854F0B; --green: #3B6D11;
+    --bad: #993C1D; --amber: #B5740F;
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--ink); }
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 24px 40px; }
+  .home-link { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 8px;
+    color: var(--muted); text-decoration: none; font-size: 13px; font-weight: 600;
+    padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); }
+  .home-link:hover { background: var(--bg); color: var(--ink); }
+  .eyebrow { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-2); font-weight: 600; }
+  h1 { font-size: 18px; font-weight: 600; margin-top: 4px; }
+  .maj { font-size: 12px; color: var(--muted-2); margin-top: 3px; }
+  main { max-width: 1000px; margin: 0 auto; padding: 28px 24px 60px; }
+
+  .section { margin-bottom: 30px; }
+  .section h2 { font-size: 16px; font-weight: 700; margin-bottom: 14px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 22px; }
+  .grid { display: grid; gap: 14px; }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  @media (max-width: 720px) { .grid-4 { grid-template-columns: 1fr 1fr; } .grid-2 { grid-template-columns: 1fr; } }
+
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+  .kpi .l { font-size: 12px; color: var(--muted); }
+  .kpi .v { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 4px; }
+  .kpi .s { font-size: 11.5px; color: var(--muted-2); margin-top: 2px; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 11px 12px; text-align: left; font-size: 13.5px; border-bottom: 1px solid var(--border); }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted-2); font-weight: 600; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .bar-cell { width: 30%; }
+  .barwrap { background: var(--bg); border-radius: 5px; height: 20px; overflow: hidden; border: 1px solid var(--border); }
+  .bar { height: 100%; }
+  .tag { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+  .tag-rec { background: #E9F2E0; color: var(--green); }
+  .tag-def { background: #FAECE7; color: var(--bad); }
+
+  .method { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .method strong { color: var(--ink); }
+  .method .formula { font-family: 'DM Mono', monospace; font-size: 12.5px; background: var(--bg);
+    padding: 10px 14px; border-radius: 8px; margin: 8px 0; display: block; }
+
+  .split { display: flex; gap: 14px; }
+  .split > div { flex: 1; padding: 16px; border-radius: 10px; }
+  .split .rec { background: #E9F2E0; }
+  .split .def { background: #FAECE7; }
+  .split .l { font-size: 12px; font-weight: 600; }
+  .split .rec .l { color: var(--green); }
+  .split .def .l { color: var(--bad); }
+  .split .v { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 4px; }
+  footer { text-align: center; color: var(--muted-2); font-size: 12px; padding: 24px; }
+  .empty { text-align: center; padding: 60px 20px; color: var(--muted-2); }
+  .note-box { background: #FBF3E5; border: 1px solid #E8D9BC; border-radius: 10px;
+    padding: 14px 18px; font-size: 12.5px; color: #6B5526; line-height: 1.5; margin-top: 14px; }
+</style>
+</head>
+<body>
+<header>
+  <a href="index.html" class="home-link">← Accueil</a>
+  <div class="eyebrow">PS France · Analyse de l'écart de CA</div>
+  <h1 id="titre">Analyse de l'écart de CA</h1>
+  <div class="maj">Mise à jour le 31/07/2026 à 10:28</div>
+  <select id="sel-mois-ecart" style="margin-top:10px;padding:7px 12px;border:1px solid var(--border);
+    border-radius:8px;font-family:inherit;font-size:13.5px;font-weight:600;background:var(--surface);
+    color:var(--ink);cursor:pointer"></select>
+</header>
+<main id="app"></main>
+<footer>Valorisation indicative basée sur un taux horaire de référence · recalculé à chaque mise à jour</footer>
+
+<script>
+const D = {"disponible": true, "analyses": {"Juillet 2026": {"mois": "Juillet", "annee": 2026, "objectif": 95000.0, "realise": 63717.0, "ecart_reel": 31283.0, "taux_ref": 157.82, "taux_detail": [{"mois": "Juin", "annee": 2026, "ca": 81371.444, "prod": 514.25, "taux": 158.23}, {"mois": "Mai", "annee": 2026, "ca": 71773.36, "prod": 347.5, "taux": 206.54}, {"mois": "Avril", "annee": 2026, "ca": 61719.0, "prod": 567.92, "taux": 108.68}], "lignes": [{"cle": "jalons", "label": "Jalons non atteints", "heures": 123.75, "montant": 19530.0, "recuperable": true}, {"cle": "depasse", "label": "Chiffrage dépassé / sous-estimation", "heures": 1.5, "montant": 237.0, "recuperable": false}, {"cle": "rework", "label": "Rework", "heures": 42.5, "montant": 6707.0, "recuperable": false}, {"cle": "bloque", "label": "Tickets bloqués", "heures": 0.0, "montant": 0.0, "recuperable": false}, {"cle": "gratuit", "label": "Prestations offertes", "heures": 6.0, "montant": 947.0, "recuperable": false}], "total_heures": 173.75, "total_montant": 27421.0, "recuperable_montant": 19530.0, "definitif_montant": 7891.0}}, "mois_ordonnes": ["Juillet 2026"], "defaut": "Juillet 2026"};
+const eur = n => Math.round(n||0).toLocaleString('fr-FR') + ' €';
+const h1 = n => (n||0).toLocaleString('fr-FR', {maximumFractionDigits:2}) + ' h';
+
+if (!D.disponible) {
+  document.getElementById('app').innerHTML =
+    `<div class="empty">Données pas encore disponibles.<br>L'analyse sera générée au prochain passage du pipeline.</div>`;
+}
+
+const CAUSE_COLORS = {
+  jalons: '#B5740F', depasse: '#B08D57', rework: '#993C1D',
+  bloque: '#7A5CA8', gratuit: '#3B6D11',
+};
+
+function render() {
+  const app = document.getElementById('app');
+  const cle = document.getElementById('sel-mois-ecart').value;
+  const A = D.analyses[cle];
+  if (!A) return;
+  document.getElementById('titre').textContent = `Analyse de l'écart de CA — ${A.mois} ${A.annee}`;
+  const ecartPct = A.objectif > 0 ? Math.round(A.ecart_reel / A.objectif * 100) : 0;
+  let html = '';
+
+  /* KPI de tête */
+  html += `<div class="section"><div class="grid grid-4">
+    <div class="kpi"><div class="l">Objectif</div><div class="v">${eur(A.objectif)}</div></div>
+    <div class="kpi"><div class="l">Réalisé</div><div class="v">${eur(A.realise)}</div></div>
+    <div class="kpi"><div class="l">Écart</div><div class="v" style="color:var(--bad)">−${eur(A.ecart_reel)}</div>
+      <div class="s">−${ecartPct}% de l'objectif</div></div>
+    <div class="kpi"><div class="l">Heures à 0 €</div><div class="v">${h1(A.total_heures)}</div>
+      <div class="s">≈ ${eur(A.total_montant)} valorisés</div></div>
+  </div></div>`;
+
+  /* Décomposition par cause */
+  const maxM = Math.max(...A.lignes.map(l => l.montant), 1);
+  let rows = '';
+  for (const l of A.lignes) {
+    const w = l.montant / maxM * 100;
+    rows += `<tr>
+      <td>${l.label}</td>
+      <td class="bar-cell"><div class="barwrap"><div class="bar" style="width:${w}%;background:${CAUSE_COLORS[l.cle]}"></div></div></td>
+      <td class="num">${h1(l.heures)}</td>
+      <td class="num">${eur(l.montant)}</td>
+      <td><span class="tag ${l.recuperable?'tag-rec':'tag-def'}">${l.recuperable?'Récupérable':'Définitif'}</span></td>
+    </tr>`;
+  }
+  html += `<div class="section"><h2>Décomposition des heures à 0 €</h2>
+    <div class="card"><table>
+      <thead><tr><th>Cause</th><th>Poids</th><th class="num">Heures</th><th class="num">Montant</th><th>Nature</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div></div>`;
+
+  /* Récupérable vs définitif */
+  html += `<div class="section"><h2>Récupérable vs définitif</h2>
+    <div class="split">
+      <div class="rec"><div class="l">Récupérable (CA à venir)</div>
+        <div class="v" style="color:var(--green)">${eur(A.recuperable_montant)}</div>
+        <div class="s" style="font-size:12px;color:var(--muted)">jalons non atteints — le CA sera déclaré quand le jalon sera franchi</div></div>
+      <div class="def"><div class="l">Coût définitif</div>
+        <div class="v" style="color:var(--bad)">${eur(A.definitif_montant)}</div>
+        <div class="s" style="font-size:12px;color:var(--muted)">rework, dépassement, blocages, prestations offertes</div></div>
+    </div></div>`;
+
+  /* Méthodologie du taux */
+  const det = A.taux_detail.map(t => `${t.mois} ${t.taux.toLocaleString('fr-FR')} €/h`).join('  ·  ');
+  html += `<div class="section"><h2>Méthodologie</h2>
+    <div class="card method">
+      <strong>Taux horaire de référence : ${A.taux_ref.toLocaleString('fr-FR')} €/h</strong>
+      <span class="formula">moyenne sur 3 mois de (CA réalisé ÷ heures productives)<br>${det}</span>
+      Chaque heure passée sans générer de CA déclaré est classée par cause, puis valorisée
+      à ce taux. La valorisation est <strong>indicative</strong> : elle estime le manque à
+      gagner théorique, à comparer à l'écart réel observé (${eur(A.ecart_reel)}).
+      <div class="note-box">
+        L'écart entre la valorisation théorique (${eur(A.total_montant)}) et l'écart réel
+        (${eur(A.ecart_reel)}) est normal : le taux de référence est une moyenne, et le CA
+        déclaré dépend aussi du séquencement des jalons, pas seulement du volume d'heures.
+      </div>
+    </div></div>`;
+
+  app.innerHTML = html;
+}
+
+/* Initialisation du sélecteur de mois */
+if (D.disponible) {
+  const sel = document.getElementById('sel-mois-ecart');
+  sel.innerHTML = D.mois_ordonnes.map(c => `<option value="${c}">${c}</option>`).join('');
+  sel.value = D.defaut;
+  sel.addEventListener('change', render);
+  render();
+}
+</script>
+</body>
+</html>
