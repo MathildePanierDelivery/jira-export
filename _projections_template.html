@@ -53,9 +53,23 @@
   /* barres par phase */
   .phase-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
   .phase-name { width: 150px; font-size: 12.5px; flex-shrink: 0; }
-  .phase-track { flex: 1; height: 24px; background: var(--bg); border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .phase-track { flex: 1; height: 24px; background: var(--bg); border-radius: 6px; overflow: hidden; border: 1px solid var(--border); display: flex; }
   .phase-fill { height: 100%; display: flex; align-items: center; padding: 0 8px; color: #fff; font-size: 11.5px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: opacity .12s; }
   .phase-fill:hover { opacity: .85; }
+  /* Part bloquée : même couleur, motif hachuré pour la distinguer */
+  .phase-bloque { background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.35) 0, rgba(255,255,255,.35) 4px, transparent 4px, transparent 8px); opacity: .78; }
+  .phase-legend { display: flex; gap: 16px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .pl-item { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); }
+  .pl-sw { width: 20px; height: 11px; border-radius: 3px; }
+  .pl-mob { background: var(--muted-2); }
+  .pl-blo { background: var(--muted-2); background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.5) 0, rgba(255,255,255,.5) 3px, transparent 3px, transparent 6px); }
+  /* Échéancier de déblocage */
+  .deb-track { display: flex; height: 30px; border-radius: 7px; overflow: hidden; border: 1px solid var(--border); margin-top: 6px; }
+  .deb-seg { display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11.5px; font-weight: 600; cursor: pointer; transition: opacity .12s; }
+  .deb-seg:hover { opacity: .85; }
+  .deb-legend { display: flex; gap: 14px; margin-top: 8px; flex-wrap: wrap; }
+  .deb-leg { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); }
+  .deb-leg .sw { width: 11px; height: 11px; border-radius: 3px; }
   .phase-amt { width: 78px; text-align: right; font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; flex-shrink: 0; }
 
   /* modèle de jalonnement */
@@ -138,12 +152,16 @@ function phasesCard(name, cls, d) {
   let rows = '';
   for (const p of D.phases) {
     const v = d.par_phase[p], nb = d.nb_par_phase[p];
-    const w = v/max*100;
+    const mob = (d.phase_mobilisable && d.phase_mobilisable[p]) || 0;
+    const blo = (d.phase_bloque && d.phase_bloque[p]) || 0;
+    const wMob = mob/max*100, wBlo = blo/max*100;
     rows += `<div class="phase-row">
       <span class="phase-name">${p}</span>
       <div class="phase-track">
-        <div class="phase-fill" style="width:${Math.max(w,0)}%;background:${PHASE_COLORS[p]}"
-          data-tip="${p}|${eur(v)} · ${nb} BDC">${w>20?nb+' BDC':''}</div>
+        <div class="phase-fill" style="width:${wMob}%;background:${PHASE_COLORS[p]}"
+          data-tip="${p} · mobilisable|${eur(mob)}"></div>
+        <div class="phase-fill phase-bloque" style="width:${wBlo}%;background:${PHASE_COLORS[p]}"
+          data-tip="${p} · bloqué|${eur(blo)}"></div>
       </div>
       <span class="phase-amt">${eurK(v)}</span>
     </div>`;
@@ -151,6 +169,10 @@ function phasesCard(name, cls, d) {
   return `<div class="card sol-${cls}">
     <div class="sol-title sol-${cls}"><span class="dot"></span>${name}</div>
     ${rows}
+    <div class="phase-legend">
+      <span class="pl-item"><span class="pl-sw pl-mob"></span>Mobilisable</span>
+      <span class="pl-item"><span class="pl-sw pl-blo"></span>Bloqué</span>
+    </div>
   </div>`;
 }
 
@@ -207,13 +229,62 @@ function render() {
   /* 3. Répartition par phase */
   html += `<div class="section"><div class="section-head">
     <h2>Répartition du backlog par phase</h2>
-    <span class="note">montant restant à reconnaître</span></div>
+    <span class="note">mobilisable vs bloqué, par phase</span></div>
     <div class="grid-2">
       ${phasesCard('Littéralis','litt',D.litt)}
       ${phasesCard('GEODP','geodp',D.geodp)}
     </div></div>`;
 
+  /* 4. Échéancier de déblocage */
+  html += renderEcheancier();
+
   document.getElementById('app').innerHTML = html;
+}
+
+function renderEcheancier() {
+  const TR = D.tranches_deb || ["Ce mois", "1-3 mois", "Au-delà", "Sans date"];
+  const TR_COLORS = {
+    "Ce mois": "#3B6D11", "1-3 mois": "#6BA12E",
+    "Au-delà": "#C99A2E", "Sans date": "#9B9B96",
+  };
+  function ligne(name, cls, d) {
+    const dm = d.deblocage_montant || {}, dn = d.deblocage_nb || {};
+    const totBloque = TR.reduce((s,t)=>s+(dm[t]||0),0);
+    if (totBloque <= 0) return '';
+    const avecDate = TR.filter(t=>t!=='Sans date').reduce((s,t)=>s+(dm[t]||0),0);
+    const pctPilote = Math.round(avecDate/totBloque*100);
+    let segs = '';
+    for (const t of TR) {
+      const v = dm[t]||0, nb = dn[t]||0;
+      if (v<=0) continue;
+      const w = v/totBloque*100;
+      segs += `<div class="deb-seg" style="width:${w}%;background:${TR_COLORS[t]}"
+        data-tip="${t}|${eur(v)} · ${nb} BDC">${w>10?nb:''}</div>`;
+    }
+    return `<div class="card sol-${cls}">
+      <div class="sol-title sol-${cls}"><span class="dot"></span>${name}
+        <span style="font-weight:400;color:var(--muted);font-size:12px;margin-left:auto">
+          ${eurK(totBloque)} bloqués · ${pctPilote}% avec échéance</span></div>
+      <div class="deb-track">${segs}</div>
+      <div class="deb-legend">
+        ${TR.map(t=>`<span class="deb-leg"><span class="sw" style="background:${TR_COLORS[t]}"></span>${t}</span>`).join('')}
+      </div>
+    </div>`;
+  }
+  return `<div class="section"><div class="section-head">
+    <h2>Échéancier de déblocage</h2>
+    <span class="note">quand se lèvent les blocages actuels</span></div>
+    <div class="grid-2">
+      ${ligne('Littéralis','litt',D.litt)}
+      ${ligne('GEODP','geodp',D.geodp)}
+    </div>
+    <div class="jalon-note" style="margin-top:14px">
+      <strong>Une large part du backlog bloqué n'a pas d'échéance de déblocage estimée.</strong>
+      C'est le reflet direct de notre <strong>dépendance aux clients</strong> : pour de nombreux projets,
+      la date de reprise ne dépend pas de nous mais de la disponibilité et de la réactivité du client.
+      Cet échéancier montre la levée des blocages <em>connus à ce jour</em> ; de nouveaux blocages peuvent
+      apparaître d'ici là, et les projets « sans date » se débloqueront au gré des retours clients.
+    </div></div>`;
 }
 
 if (D.disponible) render();

@@ -24,6 +24,7 @@ TEMPLATE_FILE   = "_projections_template.html"
 PHASES = ["Lancement & prérequis", "Mise en service",
           "Paramétrage & recette", "PV signé"]
 BLOCAGES = ["Aucun", "Blocage client", "Blocage produit", "Blocage commerce", "Autre"]
+TRANCHES_DEB = ["Ce mois", "1-3 mois", "Au-delà", "Sans date"]
 
 
 def _num(v):
@@ -58,8 +59,12 @@ def build_data():
             "temps_bloque": _num(r.get("Temps bloqué")),
             "par_phase": {p: _num(r.get(f"Phase: {p}")) for p in PHASES},
             "nb_par_phase": {p: int(_num(r.get(f"NbPhase: {p}"))) for p in PHASES},
+            "phase_mobilisable": {p: _num(r.get(f"PhaseMob: {p}")) for p in PHASES},
+            "phase_bloque": {p: _num(r.get(f"PhaseBloq: {p}")) for p in PHASES},
             "par_blocage": {b: _num(r.get(f"Bloc: {b}")) for b in BLOCAGES},
             "nb_par_blocage": {b: int(_num(r.get(f"NbBloc: {b}"))) for b in BLOCAGES},
+            "deblocage_montant": {t: _num(r.get(f"Deb€: {t}")) for t in TRANCHES_DEB},
+            "deblocage_nb": {t: int(_num(r.get(f"DebNb: {t}"))) for t in TRANCHES_DEB},
         }
 
     # Total global (somme des deux solutions)
@@ -73,6 +78,7 @@ def build_data():
         "geodp": geodp,
         "phases": PHASES,
         "blocages": BLOCAGES,
+        "tranches_deb": TRANCHES_DEB,
     }
 
 
