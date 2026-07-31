@@ -69,11 +69,17 @@ def build_data():
             "obj": _num(r.get("Objectif global (€)")),
         }
     prod_par_mois = {}
+    saisie_par_mois = {}
     for _, r in df_charge.iterrows():
         m, a = r.get("Mois"), r.get("Année")
         if pd.isna(m) or pd.isna(a):
             continue
         prod_par_mois[(m, int(a))] = _num(r.get("Productif Total"))
+        saisie_par_mois[(m, int(a))] = {
+            "saisies": _num(r.get("Heures saisies à date")),
+            "attendues": _num(r.get("Capacité attendue à date")),
+            "totale": _num(r.get("Capacité totale du mois")),
+        }
 
     # Mois analysables = ceux présents dans l'onglet temps_non_valorise
     mois_dispo = []
@@ -126,6 +132,11 @@ def build_data():
 
         total_h = round(sum(causes.values()), 2)
         ca_mois = ca_par_mois.get((mois, annee), {})
+        # Complétude de saisie (heures saisies vs attendues à date)
+        sais = saisie_par_mois.get((mois, annee), {})
+        h_saisies = sais.get("saisies", 0)
+        h_attendues = sais.get("attendues", 0)
+        pct_saisie = round(h_saisies / h_attendues * 100) if h_attendues > 0 else None
         return {
             "mois": mois, "annee": annee,
             "objectif": round(ca_mois.get("obj", 0), 0),
@@ -135,6 +146,8 @@ def build_data():
             "total_heures": total_h, "total_montant": round(total_h * taux_ref, 0),
             "recuperable_montant": round(sum(l["montant"] for l in lignes if l["recuperable"]), 0),
             "definitif_montant": round(sum(l["montant"] for l in lignes if not l["recuperable"]), 0),
+            "h_saisies": round(h_saisies, 1), "h_attendues": round(h_attendues, 1),
+            "pct_saisie": pct_saisie,
         }
 
     # Calculer tous les mois, indexés par "Mois AAAA"

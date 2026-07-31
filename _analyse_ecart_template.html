@@ -65,6 +65,9 @@
   .empty { text-align: center; padding: 60px 20px; color: var(--muted-2); }
   .note-box { background: #FBF3E5; border: 1px solid #E8D9BC; border-radius: 10px;
     padding: 14px 18px; font-size: 12.5px; color: #6B5526; line-height: 1.5; margin-top: 14px; }
+  .alerte-saisie { background: #FAECE7; border: 1px solid #E8C9BC; border-radius: 10px;
+    padding: 14px 18px; font-size: 13.5px; color: var(--bad); line-height: 1.5; margin-bottom: 22px; }
+  .alerte-saisie strong { color: var(--bad); }
 </style>
 </head>
 <body>
@@ -103,6 +106,17 @@ function render() {
   document.getElementById('titre').textContent = `Analyse de l'écart de CA — ${A.mois} ${A.annee}`;
   const ecartPct = A.objectif > 0 ? Math.round(A.ecart_reel / A.objectif * 100) : 0;
   let html = '';
+
+  /* Alerte de complétude de saisie */
+  if (A.pct_saisie !== null && A.pct_saisie < 90) {
+    const manque = Math.round(A.h_attendues - A.h_saisies);
+    html += `<div class="alerte-saisie">
+      ⚠️ <strong>Saisie incomplète ce mois : ${A.pct_saisie}%</strong>
+      (${A.h_saisies} h saisies sur ${A.h_attendues} h attendues, soit ~${manque} h manquantes).
+      Les chiffres ci-dessous sous-estiment probablement les heures réelles — à interpréter avec prudence
+      tant que la saisie n'est pas complète.
+    </div>`;
+  }
 
   /* KPI de tête */
   html += `<div class="section"><div class="grid grid-4">

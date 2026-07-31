@@ -65,6 +65,9 @@
   .empty { text-align: center; padding: 60px 20px; color: var(--muted-2); }
   .note-box { background: #FBF3E5; border: 1px solid #E8D9BC; border-radius: 10px;
     padding: 14px 18px; font-size: 12.5px; color: #6B5526; line-height: 1.5; margin-top: 14px; }
+  .alerte-saisie { background: #FAECE7; border: 1px solid #E8C9BC; border-radius: 10px;
+    padding: 14px 18px; font-size: 13.5px; color: var(--bad); line-height: 1.5; margin-bottom: 22px; }
+  .alerte-saisie strong { color: var(--bad); }
 </style>
 </head>
 <body>
@@ -72,7 +75,7 @@
   <a href="index.html" class="home-link">← Accueil</a>
   <div class="eyebrow">PS France · Analyse de l'écart de CA</div>
   <h1 id="titre">Analyse de l'écart de CA</h1>
-  <div class="maj">Mise à jour le 31/07/2026 à 11:24</div>
+  <div class="maj">Mise à jour le 31/07/2026 à 11:11</div>
   <select id="sel-mois-ecart" style="margin-top:10px;padding:7px 12px;border:1px solid var(--border);
     border-radius:8px;font-family:inherit;font-size:13.5px;font-weight:600;background:var(--surface);
     color:var(--ink);cursor:pointer"></select>
@@ -81,7 +84,7 @@
 <footer>Valorisation indicative basée sur un taux horaire de référence · recalculé à chaque mise à jour</footer>
 
 <script>
-const D = {"disponible": true, "analyses": {"Juillet 2026": {"mois": "Juillet", "annee": 2026, "objectif": 95000.0, "realise": 73699.0, "ecart_reel": 21301.0, "taux_ref": 157.82, "taux_detail": [{"mois": "Juin", "annee": 2026, "ca": 81371.444, "prod": 514.25, "taux": 158.23}, {"mois": "Mai", "annee": 2026, "ca": 71773.36, "prod": 347.5, "taux": 206.54}, {"mois": "Avril", "annee": 2026, "ca": 61719.0, "prod": 567.92, "taux": 108.68}], "lignes": [{"cle": "jalons", "label": "Jalons non atteints", "heures": 74.5, "montant": 11758.0, "recuperable": true}, {"cle": "depasse", "label": "Chiffrage dépassé / sous-estimation", "heures": 28.25, "montant": 4458.0, "recuperable": false}, {"cle": "rework", "label": "Rework", "heures": 50.25, "montant": 7930.0, "recuperable": false}, {"cle": "bloque", "label": "Tickets bloqués", "heures": 1.75, "montant": 276.0, "recuperable": false}, {"cle": "gratuit", "label": "Prestations offertes", "heures": 8.0, "montant": 1263.0, "recuperable": false}], "total_heures": 162.75, "total_montant": 25685.0, "recuperable_montant": 11758.0, "definitif_montant": 13927.0}}, "mois_ordonnes": ["Juillet 2026"], "defaut": "Juillet 2026"};
+const D = {"disponible": true, "analyses": {"Juillet 2026": {"mois": "Juillet", "annee": 2026, "objectif": 95000.0, "realise": 71407.0, "ecart_reel": 23593.0, "taux_ref": 157.82, "taux_detail": [{"mois": "Juin", "annee": 2026, "ca": 81371.444, "prod": 514.25, "taux": 158.23}, {"mois": "Mai", "annee": 2026, "ca": 71773.36, "prod": 347.5, "taux": 206.54}, {"mois": "Avril", "annee": 2026, "ca": 61719.0, "prod": 567.92, "taux": 108.68}], "lignes": [{"cle": "jalons", "label": "Jalons non atteints", "heures": 73.0, "montant": 11521.0, "recuperable": true}, {"cle": "depasse", "label": "Chiffrage dépassé / sous-estimation", "heures": 28.25, "montant": 4458.0, "recuperable": false}, {"cle": "rework", "label": "Rework", "heures": 50.25, "montant": 7930.0, "recuperable": false}, {"cle": "bloque", "label": "Tickets bloqués", "heures": 1.75, "montant": 276.0, "recuperable": false}, {"cle": "gratuit", "label": "Prestations offertes", "heures": 8.0, "montant": 1263.0, "recuperable": false}], "total_heures": 161.25, "total_montant": 25448.0, "recuperable_montant": 11521.0, "definitif_montant": 13927.0, "h_saisies": 599.3, "h_attendues": 805.7, "pct_saisie": 74}}, "mois_ordonnes": ["Juillet 2026"], "defaut": "Juillet 2026"};
 const eur = n => Math.round(n||0).toLocaleString('fr-FR') + ' €';
 const h1 = n => (n||0).toLocaleString('fr-FR', {maximumFractionDigits:2}) + ' h';
 
@@ -103,6 +106,17 @@ function render() {
   document.getElementById('titre').textContent = `Analyse de l'écart de CA — ${A.mois} ${A.annee}`;
   const ecartPct = A.objectif > 0 ? Math.round(A.ecart_reel / A.objectif * 100) : 0;
   let html = '';
+
+  /* Alerte de complétude de saisie */
+  if (A.pct_saisie !== null && A.pct_saisie < 90) {
+    const manque = Math.round(A.h_attendues - A.h_saisies);
+    html += `<div class="alerte-saisie">
+      ⚠️ <strong>Saisie incomplète ce mois : ${A.pct_saisie}%</strong>
+      (${A.h_saisies} h saisies sur ${A.h_attendues} h attendues, soit ~${manque} h manquantes).
+      Les chiffres ci-dessous sous-estiment probablement les heures réelles — à interpréter avec prudence
+      tant que la saisie n'est pas complète.
+    </div>`;
+  }
 
   /* KPI de tête */
   html += `<div class="section"><div class="grid grid-4">
