@@ -207,6 +207,8 @@ def build_data():
             except (ValueError, TypeError):
                 return 0.0
         s = slot(annee, mois).setdefault("tnv", {})
+        PHASES_JALON = ["Lancement & prérequis", "Mise en service",
+                        "Paramétrage & recette", "PV signé"]
         s[sol] = {
             "rework": _n("Rework"), "gratuit": _n("Gratuit"),
             "projet_sans_ca": _n("Projet sans CA"),
@@ -214,6 +216,7 @@ def build_data():
             "sans_ca_reste": _n("dont Reste"),
             "avec_ca_bloque": _n("Projet avec CA - Bloqué"),
             "avec_ca_depasse": _n("Projet avec CA - Dépassé"),
+            "reste_par_phase": {p: _n(f"Jalon: {p}") for p in PHASES_JALON},
         }
 
     return data

@@ -220,14 +220,23 @@ def maj_historique(contexte):
     # ── Onglet temps_non_valorise (accumulé par mois × solution) ──
     tnv = contexte.get("temps_non_valorise")
     if tnv:
+        PHASES_JALON = ["Lancement & prérequis", "Mise en service",
+                        "Paramétrage & recette", "PV signé"]
+        cols_phase = [f"Jalon: {p}" for p in PHASES_JALON]
+        base_cols = ["Mois", "Année", "Solution", "Rework", "Gratuit",
+                     "Projet sans CA", "dont Bloqué", "dont Dépassé", "dont Reste",
+                     "Projet avec CA - Bloqué", "Projet avec CA - Dépassé"] + cols_phase
         if "temps_non_valorise" not in wb.sheetnames:
             wst = wb.create_sheet("temps_non_valorise")
-            wst.append(["Mois", "Année", "Solution", "Rework", "Gratuit",
-                        "Projet sans CA", "dont Bloqué", "dont Dépassé", "dont Reste",
-                        "Projet avec CA - Bloqué", "Projet avec CA - Dépassé"])
+            wst.append(base_cols)
         else:
             wst = wb["temps_non_valorise"]
         h_t = [wst.cell(1, c).value for c in range(1, wst.max_column + 1)]
+        # Ajouter les colonnes de phase si l'en-tête ne les a pas encore (historique ancien)
+        for c in cols_phase:
+            if c not in h_t:
+                wst.cell(1, len(h_t) + 1).value = c
+                h_t.append(c)
         for sol in ["LITTERALIS", "GEODP"]:
             d = tnv[sol]
             vals = {
@@ -238,6 +247,8 @@ def maj_historique(contexte):
                 "Projet avec CA - Bloqué": d["avec_ca_bloque"],
                 "Projet avec CA - Dépassé": d["avec_ca_depasse"],
             }
+            for p in PHASES_JALON:
+                vals[f"Jalon: {p}"] = d["sans_ca_par_phase"].get(p, 0.0)
             # upsert sur clé (Mois, Année, Solution)
             trouve = False
             for r in range(2, wst.max_row + 1):

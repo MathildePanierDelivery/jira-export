@@ -902,14 +902,29 @@ def _analyse_temps_non_valorise(df_wl):
     # Les champs 27820/27853 sont déjà exprimés EN HEURES (pas en secondes).
     SEC_PAR_H = 1.0
 
+    PHASES_JALON = ["Lancement & prérequis", "Mise en service",
+                    "Paramétrage & recette", "PV signé"]
+
     def _vide():
         return {
             "rework": 0.0, "gratuit": 0.0,
             "projet_sans_ca_total": 0.0,
             "sans_ca_bloque": 0.0, "sans_ca_depasse": 0.0, "sans_ca_reste": 0.0,
             "avec_ca_bloque": 0.0, "avec_ca_depasse": 0.0,
+            # ventilation du "projet sans CA" par phase d'avancement de l'épic
+            "sans_ca_par_phase": {p: 0.0 for p in PHASES_JALON},
         }
     res = {"LITTERALIS": _vide(), "GEODP": _vide()}
+
+    # Avancement (%) par épic, pour ventiler par phase
+    def _avancement_epic(epic):
+        info = _cache["issues_by_key"].get(epic, {})
+        raw = info.get("raw_fields", {})
+        v = raw.get("customfield_21883")
+        try:
+            return float(v) if v not in (None, "") else None
+        except (ValueError, TypeError):
+            return None
 
     # 1) CA déclaré ce mois par épic (via le ticket Suivi CA de l'épic)
     ca_par_epic = {}   # epic_key -> CA du mois
@@ -953,6 +968,11 @@ def _analyse_temps_non_valorise(df_wl):
                 if not _a_declare_ca(epic):
                     # projet sans CA déclaré ce mois → temps non valorisé
                     res[sol]["projet_sans_ca_total"] += h
+                    # ventiler par phase d'avancement de l'épic
+                    pct = _avancement_epic(epic)
+                    ph = _phase_de_pct(pct)
+                    if ph in res[sol]["sans_ca_par_phase"]:
+                        res[sol]["sans_ca_par_phase"][ph] += h
 
     # 4) Ventiler bloqué/dépassé selon valorisation de l'épic
     def _sol_epic(epic):
@@ -974,14 +994,24 @@ def _analyse_temps_non_valorise(df_wl):
         else:
             res[sol]["sans_ca_depasse"] += d
 
-    # 5) Calculer le "reste à expliquer" = projet_sans_ca - bloqué - dépassé (plancher 0)
+    # 5) Calculer le "reste" (jalons non atteints) = projet_sans_ca - bloqué - dépassé
     for sol in res:
         d = res[sol]
         reste = d["projet_sans_ca_total"] - d["sans_ca_bloque"] - d["sans_ca_depasse"]
         d["sans_ca_reste"] = max(0.0, round(reste, 2))
-        # arrondis
+        # Ventiler le reste par phase, au prorata de la répartition du projet sans CA.
+        # (le bloqué/dépassé retiré n'est pas ventilé par phase, on l'enlève au prorata)
+        tot_phase = sum(d["sans_ca_par_phase"].values())
+        if tot_phase > 0 and d["sans_ca_reste"] > 0:
+            ratio = d["sans_ca_reste"] / tot_phase
+            d["sans_ca_par_phase"] = {p: round(v * ratio, 2)
+                                      for p, v in d["sans_ca_par_phase"].items()}
+        else:
+            d["sans_ca_par_phase"] = {p: 0.0 for p in d["sans_ca_par_phase"]}
+        # arrondis des autres champs
         for key in d:
-            d[key] = round(d[key], 2)
+            if key != "sans_ca_par_phase":
+                d[key] = round(d[key], 2)
     return res
 
 

@@ -187,6 +187,14 @@
   .tnv-legend { display: flex; gap: 16px; margin-top: 8px; padding-left: 102px; flex-wrap: wrap; }
   .tnv-leg { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
   .tnv-leg .sw { width: 11px; height: 11px; border-radius: 3px; }
+  /* Détail des jalons non atteints par phase */
+  .jalon-detail-row { display: flex; align-items: center; gap: 12px; margin-bottom: 9px; }
+  .jd-name { width: 150px; font-size: 12.5px; flex-shrink: 0; }
+  .jd-track { flex: 1; height: 18px; background: var(--bg); border-radius: 5px; overflow: hidden; border: 1px solid var(--border); }
+  .jd-fill { height: 100%; background: #9B9B96; }
+  .jd-val { width: 60px; text-align: right; font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+  .jd-split { width: 210px; text-align: right; font-size: 11px; color: var(--muted-2); flex-shrink: 0; }
+  @media (max-width: 720px) { .jd-split { display: none; } }
 
   footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px; }
   #tooltip { position: fixed; pointer-events: none; z-index: 100; background: var(--ink); color: #fff;
@@ -353,7 +361,7 @@ function renderTempsNonValorise(tnv) {
     {key:'gratuit', label:'Prestations offertes', color:'#B5740F'},
     {key:'bloque',  label:'Bloqué',               color:'#7A5CA8'},
     {key:'depasse', label:'Dépassé',              color:'#B08D57'},
-    {key:'reste',   label:'Reste à expliquer',    color:'#9B9B96'},
+    {key:'reste',   label:'Jalons non atteints',  color:'#9B9B96'},
   ];
 
   const maxTot = Math.max(totL, totG, 1);
@@ -395,7 +403,37 @@ function renderTempsNonValorise(tnv) {
       ${bar('Littéralis','tag-litt',L)}
       ${bar('GEODP','tag-geodp',G)}
       <div class="tnv-legend">${leg}</div>
-    </div></div>`;
+    </div>
+    ${renderDetailJalons(litt, geodp)}</div>`;
+}
+
+function renderDetailJalons(litt, geodp) {
+  const hh = n => (n||0).toLocaleString('fr-FR', {maximumFractionDigits:2}) + ' h';
+  const PHASES = ["Lancement & prérequis", "Mise en service", "Paramétrage & recette", "PV signé"];
+  const pl = (litt && litt.reste_par_phase) || {};
+  const pg = (geodp && geodp.reste_par_phase) || {};
+  // total par phase (les 2 solutions)
+  const tot = {}; let grand = 0;
+  for (const p of PHASES) { tot[p] = (pl[p]||0) + (pg[p]||0); grand += tot[p]; }
+  if (grand <= 0) return '';
+  const max = Math.max(...PHASES.map(p=>tot[p]), 1);
+  let rows = '';
+  for (const p of PHASES) {
+    const v = tot[p];
+    if (v <= 0) continue;
+    const w = v/max*100;
+    rows += `<div class="jalon-detail-row">
+      <span class="jd-name">${p}</span>
+      <div class="jd-track"><div class="jd-fill" style="width:${w}%"></div></div>
+      <span class="jd-val">${hh(v)}</span>
+      <span class="jd-split">Litt ${hh(pl[p]||0)} · GEODP ${hh(pg[p]||0)}</span>
+    </div>`;
+  }
+  return `<div class="card" style="margin-top:14px">
+    <div class="label" style="margin-bottom:4px">Détail des jalons non atteints — par phase du projet</div>
+    <div class="note" style="margin-bottom:12px">où en sont les projets sur lesquels on a travaillé sans déclarer de CA ce mois</div>
+    ${rows}
+  </div>`;
 }
 
 function render() {
