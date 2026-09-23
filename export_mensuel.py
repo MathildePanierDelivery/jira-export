@@ -1219,12 +1219,14 @@ write_sheet_title(ws_cap, "Capacité productive — Chargés de déploiement & C
                   f"Mois de {mois_courant_label} {month_start.year} — {num_working_days} jours ouvrés")
 
 collaborateurs_ana = [
-    "Bérénice Bossard", "Marine Masingarbe", "Duncan Hamelin",
-    "Maxime Pontonnier", "Quentin Bordillon",
+    "Bérénice Bossard", "Marine Masingarbe",
+    "Maxime Pontonnier", "Timon Bos",
     "Fabien Reutenauer", "Flavie Bardin", "Rémy Vincent",
 ]
 # Flavie Bardin à 0% (départ fin mois précédent, remplacement en cours)
-taux_global_ana = [1.00, 1.00, 1.00, 0.80, 1.00, 1.00, 0.00, 1.00]
+# Timon Bos à 80% (remplace Quentin Bordillon sur GEODP à partir de septembre)
+# Duncan Hamelin retiré (départ sans remplacement)
+taux_global_ana = [1.00, 1.00, 0.80, 0.80, 1.00, 0.00, 1.00]
 heures_par_jour = 7
 
 # Calculs PAR PERSONNE (gardés en mémoire pour la Charge et le dashboard,
@@ -1265,8 +1267,8 @@ repartition_litteralis = {"Productif": 0.75, "Support": 0.20, "Interne": 0.05}
 repartition_geodp      = {"Productif": 0.95, "Support": 0.00, "Interne": 0.05}
 repartition_cp         = {"Productif": 0.90, "Support": 0.00, "Interne": 0.10}
 
-equipe_litteralis = ["Bérénice Bossard", "Marine Masingarbe", "Duncan Hamelin"]
-equipe_geodp      = ["Maxime Pontonnier", "Quentin Bordillon"]
+equipe_litteralis = ["Bérénice Bossard", "Marine Masingarbe"]
+equipe_geodp      = ["Maxime Pontonnier", "Timon Bos"]
 equipe_cp         = ["Fabien Reutenauer", "Flavie Bardin", "Rémy Vincent"]
 
 heures_litteralis = sum(c[3] for c in capacites if c[0] in equipe_litteralis)
@@ -1317,8 +1319,8 @@ CP_SPLIT = {
 }
 # Ajustement : part non-productive (interne/support) retirée de la capacité théorique productive
 ajustements = {
-    "Bérénice Bossard": 0.25, "Marine Masingarbe": 0.25, "Duncan Hamelin": 0.25,
-    "Maxime Pontonnier": 0.05, "Quentin Bordillon": 0.05,
+    "Bérénice Bossard": 0.25, "Marine Masingarbe": 0.25,
+    "Maxime Pontonnier": 0.05, "Timon Bos": 0.05,
     "Fabien Reutenauer": 0.10, "Flavie Bardin": 0.10, "Rémy Vincent": 0.10,
 }
 cap_theo_dict = {name: htot * (1 - ajustements.get(name, 0))
