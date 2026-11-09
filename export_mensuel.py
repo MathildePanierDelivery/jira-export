@@ -1205,7 +1205,9 @@ _write_ca_sheet(ws_hw, _filter_cols(df_hardware, COLS_SUIVI_HW),
 # ══════════════════════════════════════════════════════════════════
 # JOURS OUVRÉS DU MOIS
 # ══════════════════════════════════════════════════════════════════
-all_days           = pd.date_range(month_start_date, month_end_date, freq="D")
+# month_end_date est le 1er du mois suivant (exclusif). pd.date_range inclut sa
+# borne de fin, donc on s'arrête la veille pour ne pas compter un jour en trop.
+all_days           = pd.date_range(month_start_date, month_end_date - timedelta(days=1), freq="D")
 fr_holidays        = holidays.France(years=month_start_date.year)
 holidays_in_period = [d for d in all_days if d in fr_holidays]
 working_days       = [d for d in all_days if d.weekday() < 5 and d not in holidays_in_period]
