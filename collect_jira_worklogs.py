@@ -43,14 +43,19 @@ TEMPO_BASE = "https://api.eu.tempo.io/4"
 # C'est CE mapping qui définit le périmètre "équipe" : seuls ces 8 comptes
 # sont conservés dans les worklogs. Tout le reste (autres équipes) est ignoré.
 ACCOUNT_TO_COLLAB = {
+    # Anciens membres conservés pour pouvoir refiger des mois passés où ils étaient présents
     '63fe26c90a4a47fb8d213c54'                    : 'Quentin Bordillon',
     '712020:bb1c3fc2-7106-4c8b-9955-2e4917706722' : 'Fabien Reutenauer',
-    '63fe26c7f00d095406f2590c'                    : 'Bérénice Bossard',
     '712020:f59016f5-1528-45f5-a182-d91eb6f69cad' : 'Flavie Bardin',
+    '712020:ab30e040-78a7-40e1-aef4-ff6781645c8e' : 'Duncan Hamelin',
+    # Équipe actuelle (noms harmonisés avec export_mensuel.py et absences_2026.xlsx)
+    '63fe26c7f00d095406f2590c'                    : 'Bérénice Bossard',
     '712020:e3996f09-39b9-4957-8f83-d925d9543c98' : 'Maxime Pontonnier',
     '712020:30146e03-1c8d-42f4-a105-c6987f9b2e2c' : 'Marine Masingarbe',
-    '712020:ab30e040-78a7-40e1-aef4-ff6781645c8e' : 'Duncan Hamelin',
-    '712020:a40869a4-1333-4240-ac8a-670ed2314e0b' : 'Remy Vincent',
+    '712020:a40869a4-1333-4240-ac8a-670ed2314e0b' : 'Rémy Vincent',
+    '6405f3240d9b61193c263860'                    : 'Timon Bos',
+    '712020:9e020ff3-7baf-41fb-988e-59fc30e2f072' : 'Marie-Maud Chiarappa',
+    '712020:9b789a86-aafa-46d9-a811-69966c5e521a' : 'Estelle Leduc',
 }
 
 MOIS_FR = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
