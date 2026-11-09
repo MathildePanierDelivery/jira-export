@@ -1221,12 +1221,15 @@ write_sheet_title(ws_cap, "Capacité productive — Chargés de déploiement & C
 collaborateurs_ana = [
     "Bérénice Bossard", "Marine Masingarbe",
     "Maxime Pontonnier", "Timon Bos",
-    "Fabien Reutenauer", "Flavie Bardin", "Rémy Vincent",
+    "Marie-Maud Chiarappa", "Estelle LEDUC", "Rémy Vincent",
 ]
-# Flavie Bardin à 0% (départ fin mois précédent, remplacement en cours)
-# Timon Bos à 80% (remplace Quentin Bordillon sur GEODP à partir de septembre)
-# Duncan Hamelin retiré (départ sans remplacement)
-taux_global_ana = [1.00, 1.00, 0.80, 0.80, 1.00, 0.00, 1.00]
+# Équipe au 01/11/2026 :
+#   CD Littéralis : Bérénice Bossard, Marine Masingarbe
+#   CD GEODP      : Maxime Pontonnier (100%), Timon Bos (80%)
+#   CP Littéralis : Marie-Maud Chiarappa (remplace Fabien Reutenauer), Rémy Vincent
+#   CP GEODP      : Estelle LEDUC (nouvelle)
+# Départs : Flavie Bardin, Fabien Reutenauer, Duncan Hamelin, Quentin Bordillon
+taux_global_ana = [1.00, 1.00, 1.00, 0.80, 1.00, 1.00, 1.00]
 heures_par_jour = 7
 
 # Calculs PAR PERSONNE (gardés en mémoire pour la Charge et le dashboard,
@@ -1269,7 +1272,7 @@ repartition_cp         = {"Productif": 0.90, "Support": 0.00, "Interne": 0.10}
 
 equipe_litteralis = ["Bérénice Bossard", "Marine Masingarbe"]
 equipe_geodp      = ["Maxime Pontonnier", "Timon Bos"]
-equipe_cp         = ["Fabien Reutenauer", "Flavie Bardin", "Rémy Vincent"]
+equipe_cp         = ["Marie-Maud Chiarappa", "Estelle LEDUC", "Rémy Vincent"]
 
 heures_litteralis = sum(c[3] for c in capacites if c[0] in equipe_litteralis)
 heures_geodp      = sum(c[3] for c in capacites if c[0] in equipe_geodp)
@@ -1313,15 +1316,15 @@ autofit(ws_cap)
 # ══════════════════════════════════════════════════════════════════
 # Capacités PRODUCTIVES par solution (CD de la solution + CP ventilés)
 CP_SPLIT = {
-    "Flavie Bardin"     : {"LITTERALIS": 0.40, "GEODP": 0.60},
-    "Fabien Reutenauer" : {"LITTERALIS": 1.00, "GEODP": 0.00},
-    "Rémy Vincent"      : {"LITTERALIS": 1.00, "GEODP": 0.00},
+    "Marie-Maud Chiarappa" : {"LITTERALIS": 1.00, "GEODP": 0.00},
+    "Estelle LEDUC"        : {"LITTERALIS": 0.00, "GEODP": 1.00},
+    "Rémy Vincent"         : {"LITTERALIS": 1.00, "GEODP": 0.00},
 }
 # Ajustement : part non-productive (interne/support) retirée de la capacité théorique productive
 ajustements = {
     "Bérénice Bossard": 0.25, "Marine Masingarbe": 0.25,
     "Maxime Pontonnier": 0.05, "Timon Bos": 0.05,
-    "Fabien Reutenauer": 0.10, "Flavie Bardin": 0.10, "Rémy Vincent": 0.10,
+    "Marie-Maud Chiarappa": 0.10, "Estelle LEDUC": 0.10, "Rémy Vincent": 0.10,
 }
 cap_theo_dict = {name: htot * (1 - ajustements.get(name, 0))
                  for name, taux, jeff, htot in capacites}
