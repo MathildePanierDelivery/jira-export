@@ -152,8 +152,8 @@ ABSENCES_FILE = "absences_2026.xlsx"
 
 OBJECTIFS_FILE   = "objectifs.xlsx"
 # Ordre de priorité : la dernière estimation prime. Pour chaque mois et chaque
-# solution, on prend LE2 si renseigné, sinon LE1, sinon Budget.
-OBJECTIFS_PRIORITE = ["LE2", "LE1", "Budget"]
+# solution, on prend LE3 si renseigné, sinon LE2, sinon LE1, sinon Budget.
+OBJECTIFS_PRIORITE = ["LE3", "LE2", "LE1", "Budget"]
 
 def _lire_onglet_objectifs(filepath, onglet, mois_label):
     """Lit (global, litt, geodp) pour un mois dans un onglet donné.
